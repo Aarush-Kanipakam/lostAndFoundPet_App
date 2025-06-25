@@ -8,8 +8,9 @@ import 'pages/auth/phone_auth_page.dart';
 import 'pages/home/home_page.dart';
 import 'pages/pets/report_found_pet_page.dart';
 import 'pages/pets/report_lost_pet_page.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; // added
-
+import 'pages/pets/reported_pets_page.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'pages/pets/pet_matches_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +69,8 @@ class MyApp extends StatelessWidget {
         '/home': (context) => const HomePage(),
         '/lost': (context) => const ReportLostPetPage(),
         '/found': (context) => const ReportFoundPetPage(),
+        '/reported': (context) => const ReportedPetsPage(),
+        '/matches': (context) => const PetMatchesPage(),
       },
       debugShowCheckedModeBanner: false,
     );

@@ -205,6 +205,30 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
+
+              const SizedBox(height: 16),
+
+              // Your Reported Pets Button
+              ElevatedButton.icon(
+                onPressed: () {
+                  // Pass userId to reported pets page
+                  Navigator.pushNamed(
+                    context, 
+                    '/reported',
+                    arguments: {'userId': _userId},
+                  );
+                },
+                icon: const Icon(Icons.pets),
+                label: const Text('Your Reported Pets'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: const Color.fromARGB(255, 29, 68, 160),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
