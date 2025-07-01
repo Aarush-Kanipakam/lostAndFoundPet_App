@@ -172,11 +172,11 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
   Future<void> _handlePhoneSubmission() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Check if terms are accepted
-    if (!_termsAccepted) {
-      _showToast('Please read and accept the Terms & Conditions first');
-      return;
-    }
+    // // Check if terms are accepted
+    // if (!_termsAccepted) {
+    //   _showToast('Please read and accept the Terms & Conditions first');
+    //   return;
+    // }
 
     setState(() {
       _isLoading = true;
@@ -221,6 +221,12 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
 
   if (_nameController.text.trim().length < 2) {
     _showToast('Name must be at least 2 characters');
+    return;
+  }
+
+  // Check if terms are accepted for new users
+  if (!_termsAccepted) {
+    _showToast('Please read and accept the Terms & Conditions first');
     return;
   }
 
@@ -764,19 +770,20 @@ Future<void> _saveUserDataLocally() async {
   }
 
   // Go back to phone input
-  void _goBackToPhoneInput() {
-    setState(() {
-      _otpSent = false;
-      _showNameInput = false;
-      _isExistingUser = false;
-      _existingUserName = '';
-      _existingUserId = '';
-      _otpController.clear();
-      _nameController.clear();
-      _resendTimer = 0;
-      _verificationId = '';
-    });
-  }
+void _goBackToPhoneInput() {
+  setState(() {
+    _otpSent = false;
+    _showNameInput = false;
+    _isExistingUser = false;
+    _existingUserName = '';
+    _existingUserId = '';
+    _otpController.clear();
+    _nameController.clear();
+    _resendTimer = 0;
+    _verificationId = '';
+    _termsAccepted = false; // Reset terms acceptance
+  });
+}
 
   @override
   Widget build(BuildContext context) {
@@ -1011,7 +1018,79 @@ Future<void> _saveUserDataLocally() async {
                     },
                   ),
                   
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 20),
+                  
+                  // Terms and conditions for new users
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _termsAccepted,
+                              onChanged: (bool? value) {
+                                if (value == true) {
+                                  _showTermsDialog();
+                                } else {
+                                  setState(() {
+                                    _termsAccepted = false;
+                                  });
+                                }
+                              },
+                              activeColor: Colors.blue[600],
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => _showTermsDialog(),
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                    ),
+                                    children: [
+                                      const TextSpan(text: 'I agree to the '),
+                                      TextSpan(
+                                        text: 'Terms & Conditions',
+                                        style: TextStyle(
+                                          color: Colors.blue[600],
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                      const TextSpan(text: ' including phone number sharing for pet-related communication'),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        if (!_termsAccepted)
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.orange[50],
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: Colors.orange[200]!),
+                            ),
+                            child: Text(
+                              '⚠️ Your phone number will be visible to other users',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange[800],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 10),
                   
                   // Proceed with registration button
                   ElevatedButton(
@@ -1170,75 +1249,7 @@ Future<void> _saveUserDataLocally() async {
                 
                 const Spacer(),
                 
-                // Terms and conditions
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _termsAccepted,
-                            onChanged: (bool? value) {
-                              if (value == true) {
-                                _showTermsDialog();
-                              } else {
-                                setState(() {
-                                  _termsAccepted = false;
-                                });
-                              }
-                            },
-                            activeColor: Colors.blue[600],
-                          ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => _showTermsDialog(),
-                              child: RichText(
-                                text: TextSpan(
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                  children: [
-                                    const TextSpan(text: 'I agree to the '),
-                                    TextSpan(
-                                      text: 'Terms & Conditions',
-                                      style: TextStyle(
-                                        color: Colors.blue[600],
-                                        fontWeight: FontWeight.bold,
-                                        decoration: TextDecoration.underline,
-                                      ),
-                                    ),
-                                    const TextSpan(text: ' including phone number sharing for pet-related communication'),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      if (!_termsAccepted)
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.orange[50],
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.orange[200]!),
-                          ),
-                          child: Text(
-                            '⚠️ Your phone number will be visible to other users',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.orange[800],
-                              fontWeight: FontWeight.w500,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
+                
               ],
                 ),
               ),
