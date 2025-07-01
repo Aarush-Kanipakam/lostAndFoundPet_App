@@ -20,7 +20,7 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _otpController = TextEditingController();
-  
+  bool _termsAccepted = false;
   String _completePhoneNumber = '';
   String _countryCode = '+91'; // Default to India
   bool _isLoading = false;
@@ -52,21 +52,104 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
     _otpController.dispose();
     super.dispose();
   }
-
+  Future<void> _showTermsDialog() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Terms & Conditions'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Pet Finder App - Terms of Service',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'By using this app, you agree to the following:',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  '1. PHONE NUMBER SHARING\n'
+                  '• Your phone number will be visible to other users when you post about lost or found pets\n'
+                  '• Other users may contact you directly via phone or Whatsapp regarding pet-related matters\n'
+                  '• You consent to receiving calls/messages from pet owners or finders\n',
+                ),
+                const Text(
+                  '2. PRIVACY & SAFETY\n'
+                  '• Only share your phone number if you\'re comfortable being contacted\n'
+                  '• We recommend meeting in public places when arranging pet exchanges\n'
+                  '• Report any inappropriate contact to our support team\n',
+                ),
+                const Text(
+                  '3. DATA USAGE\n'
+                  '• Your name and phone number will be stored securely\n'
+                  '• Information is used solely for pet-finding purposes\n'
+                  '• You can delete your account and data at any time\n',
+                ),
+                const Text(
+                  '4. USER RESPONSIBILITIES\n'
+                  '• Provide accurate information about lost/found pets\n'
+                  '• Use the app responsibly and ethically\n'
+                  '• Respect other users\' privacy and safety\n',
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.orange[50],
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.orange[200]!),
+                  ),
+                  child: const Text(
+                    '⚠️ IMPORTANT: By proceeding, you acknowledge that your phone number will be shared with other users for pet-related communication.',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Read Again'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _termsAccepted = true;
+                });
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[600],
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('I Agree'),
+            ),
+          ],
+        );
+      },
+    );
+  }
   // Check if user is already logged in
   Future<void> _checkExistingUser() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-    
-    // Also check Firebase auth state
-    final currentUser = _auth.currentUser;
-    
-    if ((isLoggedIn || currentUser != null) && mounted) {
-      // Get the stored user ID and pass it to home page
-      final userId = prefs.getString('userId') ?? '';
+  final prefs = await SharedPreferences.getInstance();
+  final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+  
+  if (isLoggedIn && mounted) {
+    // Get the stored user ID and pass it to home page
+    final userId = prefs.getString('userId') ?? '';
+    if (userId.isNotEmpty) {
       _navigateToHome(userId);
     }
   }
+}
 
   // Check if phone number exists in database
   Future<Map<String, dynamic>?> _checkPhoneExists(String phone) async {
@@ -88,6 +171,12 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
   // Handle phone number submission
   Future<void> _handlePhoneSubmission() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    // Check if terms are accepted
+    if (!_termsAccepted) {
+      _showToast('Please read and accept the Terms & Conditions first');
+      return;
+    }
 
     setState(() {
       _isLoading = true;
@@ -125,20 +214,31 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
 
   // Proceed with registration after name input
   Future<void> _proceedWithRegistration() async {
-    if (_nameController.text.trim().isEmpty) {
-      _showToast('Please enter your name');
-      return;
-    }
-
-    if (_nameController.text.trim().length < 2) {
-      _showToast('Name must be at least 2 characters');
-      return;
-    }
-
-    // Proceed with OTP for new user registration
-    await _sendOTP();
+  if (_nameController.text.trim().isEmpty) {
+    _showToast('Please enter your name');
+    return;
   }
 
+  if (_nameController.text.trim().length < 2) {
+    _showToast('Name must be at least 2 characters');
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    // DON'T save to Supabase yet - just send OTP
+    // The user will be saved after successful OTP verification
+    await _sendOTP();
+  } catch (error) {
+    setState(() {
+      _isLoading = false;
+    });
+    _showToast('Error sending OTP: $error');
+  }
+}
   // Save user data to Supabase
   Future<String?> _saveUserToSupabase(String name, String phone) async {
     try {
@@ -200,158 +300,359 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
   Future<void> _dummyLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Check if we need name input for new users
-    if (!_isExistingUser && _nameController.text.trim().isEmpty) {
-      _showToast('Please enter your name');
+    // Check if terms are accepted
+    if (!_termsAccepted) {
+      _showToast('Please read and accept the Terms & Conditions first');
       return;
     }
-
     setState(() {
       _isDummyLoading = true;
     });
 
-    try {
-      String? userId;
-      String userName;
+  try {
+    String? userId;
+    String userName;
 
-      if (_isExistingUser) {
-        // Existing user - get their data
-        userId = _existingUserId.isNotEmpty ? _existingUserId : await _updateUserInSupabase(_completePhoneNumber);
-        userName = _existingUserName;
-      } else {
-        // New user - save their data
-        userId = await _saveUserToSupabase(
-          _nameController.text.trim(),
-          _completePhoneNumber,
-        );
-        userName = _nameController.text.trim();
+    if (_isExistingUser) {
+      // Existing user - use stored data
+      userId = _existingUserId;
+      userName = _existingUserName;
+    } else {
+      // New user - check if name is provided
+      if (_nameController.text.trim().isEmpty) {
+        _showToast('Please enter your name');
+        setState(() {
+          _isDummyLoading = false;
+        });
+        return;
       }
-
-      if (userId != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('userName', userName);
-        await prefs.setString('userPhone', _completePhoneNumber);
-        await prefs.setString('userId', userId);
-        await prefs.setBool('isLoggedIn', true);
-
-        _showToast('Login successful!');
-
-        // Navigate to home with user ID
-        _navigateToHome(userId);
-      }
-    } catch (error) {
-      _showToast('Login failed: $error');
-    } finally {
-      setState(() {
-        _isDummyLoading = false;
-      });
+      
+      // Save new user to Supabase
+      userId = await _saveUserToSupabase(
+        _nameController.text.trim(),
+        _completePhoneNumber,
+      );
+      userName = _nameController.text.trim();
     }
+
+    if (userId != null) {
+      // Save locally
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userName', userName);
+      await prefs.setString('userPhone', _completePhoneNumber);
+      await prefs.setString('userId', userId);
+      await prefs.setBool('isLoggedIn', true);
+
+      _showToast('Login successful!');
+      _navigateToHome(userId);
+    } else {
+      _showToast('Failed to create/login user');
+    }
+  } catch (error) {
+    _showToast('Login failed: $error');
+  } finally {
+    setState(() {
+      _isDummyLoading = false;
+    });
   }
+}
 
   // Send OTP to phone number
   Future<void> _sendOTP() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: _completePhoneNumber,
-        verificationCompleted: (fb_auth.PhoneAuthCredential credential) async {
-          // Auto-verification (happens on some Android devices)
-          await _signInWithCredential(credential);
-        },
-        verificationFailed: (fb_auth.FirebaseAuthException e) {
-          setState(() {
-            _isLoading = false;
-          });
-          _showToast('Verification failed: ${e.message}');
-        },
-        codeSent: (String verificationId, int? resendToken) {
-          setState(() {
-            _verificationId = verificationId;
-            _otpSent = true;
-            _isLoading = false;
-          });
-          _showToast('OTP sent successfully!');
-          _startResendTimer();
-        },
-        codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
-        },
-        timeout: const Duration(seconds: 60),
-      );
-      
-    } on fb_auth.FirebaseAuthException catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showToast('Error: ${e.message}');
-    } catch (error) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showToast('An unexpected error occurred');
-    }
+  // Validate phone number format before sending
+  if (_completePhoneNumber.isEmpty || _completePhoneNumber.length < 10) {
+    _showToast('Please enter a valid phone number');
+    return;
   }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  print('Sending OTP to: $_completePhoneNumber'); // Debug print
+
+  try {
+    await _auth.verifyPhoneNumber(
+      phoneNumber: _completePhoneNumber,
+      verificationCompleted: (fb_auth.PhoneAuthCredential credential) async {
+        print('Auto-verification completed'); // Debug print
+        await _signInWithCredential(credential);
+      },
+      verificationFailed: (fb_auth.FirebaseAuthException e) {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        print('Verification failed: ${e.code} - ${e.message}'); // Debug print
+        
+        switch (e.code) {
+          case 'invalid-phone-number':
+            _showToast('Invalid phone number format');
+            break;
+          case 'too-many-requests':
+            _showToast('Too many requests. Please try again later.');
+            break;
+          case 'quota-exceeded':
+            _showToast('SMS quota exceeded. Please try again later.');
+            break;
+          default:
+            _showToast('Verification failed: ${e.message}');
+        }
+      },
+      codeSent: (String verificationId, int? resendToken) {
+        print('OTP sent successfully. VerificationId: $verificationId'); // Debug print
+        setState(() {
+          _verificationId = verificationId;
+          _otpSent = true;
+          _isLoading = false;
+        });
+        _showToast('OTP sent successfully!');
+        _startResendTimer();
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {
+        print('Auto-retrieval timeout. VerificationId: $verificationId'); // Debug print
+        _verificationId = verificationId;
+      },
+      timeout: const Duration(seconds: 60),
+    );
+    
+  } on fb_auth.FirebaseAuthException catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    print('Firebase exception in _sendOTP: ${e.code} - ${e.message}'); // Debug print
+    _showToast('Error: ${e.message}');
+  } catch (error) {
+    setState(() {
+      _isLoading = false;
+    });
+    print('General error in _sendOTP: $error'); // Debug print
+    _showToast('An unexpected error occurred');
+  }
+}
 
   // Verify OTP
   Future<void> _verifyOTP() async {
-    if (_otpController.text.trim().length != 6) {
-      _showToast('Please enter a valid 6-digit OTP');
-      return;
-    }
+  if (_otpController.text.trim().length != 6) {
+    _showToast('Please enter a valid 6-digit OTP');
+    return;
+  }
 
-    setState(() {
-      _isLoading = true;
-    });
+  setState(() {
+    _isLoading = true;
+  });
 
-    try {
-      // Create credential from verification ID and OTP
-      fb_auth.PhoneAuthCredential credential = fb_auth.PhoneAuthProvider.credential(
-        verificationId: _verificationId,
-        smsCode: _otpController.text.trim(),
-      );
+try {
+  // Create credential from verification ID and OTP
+  fb_auth.PhoneAuthCredential credential = fb_auth.PhoneAuthProvider.credential(
+    verificationId: _verificationId,
+    smsCode: _otpController.text.trim(),
+  );
 
-      await _signInWithCredential(credential);
-      
-    } on fb_auth.FirebaseAuthException catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showToast('Invalid OTP: ${e.message}');
-    } catch (error) {
-      setState(() {
-        _isLoading = false;
-      });
-      _showToast('Verification failed');
+  // FIXED: Use the workaround for the casting bug
+  fb_auth.UserCredential? userCredential;
+  try {
+    userCredential = await _auth.signInWithCredential(credential);
+  } catch (e) {
+    // Check if this is the specific casting error
+    if (e.toString().contains("is not a subtype of type 'PigeonUserDetails?'")) {
+      // Get the current user after the credential was processed
+      fb_auth.User? currentUser = _auth.currentUser;
+      if (currentUser != null) {
+        // Create a mock UserCredential-like result
+        print('OTP verification successful (workaround applied)');
+        // Immediately sign out from Firebase since we only use it for OTP
+        await _auth.signOut();
+        // Handle Supabase operations
+        await _handleSupabaseOperations();
+        return;
+      } else {
+        throw Exception('OTP verification failed');
+      }
+    } else {
+      // Re-throw other errors
+      rethrow;
     }
   }
+  
+  // If we get here, normal flow worked
+  if (userCredential?.user != null) {
+    // Immediately sign out from Firebase since we only use it for OTP
+    await _auth.signOut();
+    // Handle Supabase operations
+    await _handleSupabaseOperations();
+  } else {
+    throw Exception('OTP verification failed');
+  }
+  
+} on fb_auth.FirebaseAuthException catch (e) {
+  // ... rest of your existing Firebase exception handling remains the same
+    setState(() {
+      _isLoading = false;
+    });
+    
+    print('Firebase Auth Error Code: ${e.code}');
+    print('Firebase Auth Error Message: ${e.message}');
+    
+    switch (e.code) {
+      case 'invalid-verification-code':
+        _showToast('Invalid OTP. Please check and try again.');
+        break;
+      case 'session-expired':
+        _showToast('OTP expired. Please request a new one.');
+        _goBackToPhoneInput();
+        break;
+      case 'invalid-verification-id':
+        _showToast('Invalid session. Please try again.');
+        _goBackToPhoneInput();
+        break;
+      case 'credential-already-in-use':
+        _showToast('This phone number is already in use.');
+        break;
+      default:
+        _showToast('Verification failed: ${e.message}');
+    }
+  } catch (error) {
+    setState(() {
+      _isLoading = false;
+    });
+    print('General OTP verification error: $error');
+    _showToast('Verification failed. Please try again.');
+  }
+}
+
+
 
   // Sign in with phone credential
-  Future<void> _signInWithCredential(fb_auth.PhoneAuthCredential credential) async {
+  // Sign in with phone credential
+// Sign in with phone credential
+Future<void> _signInWithCredential(fb_auth.PhoneAuthCredential credential) async {
+  try {
+    print('Attempting to sign in with credential for OTP verification...');
+    
+    // FIXED: Apply workaround for casting bug
+    fb_auth.UserCredential? userCredential;
     try {
-      fb_auth.UserCredential userCredential = await _auth.signInWithCredential(credential);
-      
-      if (userCredential.user != null) {
-        // Save user data locally and to Supabase
-        final userId = await _saveUserData(userCredential.user!);
-        
-        // Navigate to home page with user ID
-        if (userId != null) {
-          _navigateToHome(userId);
-        }
-      }
+      userCredential = await _auth.signInWithCredential(credential);
     } catch (e) {
+      // Check if this is the specific casting error
+      if (e.toString().contains("is not a subtype of type 'PigeonUserDetails?'")) {
+        // Get the current user after the credential was processed
+        fb_auth.User? currentUser = _auth.currentUser;
+        if (currentUser != null) {
+          print('OTP verification successful (workaround applied)');
+          // Immediately sign out from Firebase since we only use it for OTP
+          await _auth.signOut();
+          print('Signed out from Firebase after OTP verification');
+          // Handle Supabase operations
+          await _handleSupabaseOperations();
+          return;
+        } else {
+          throw Exception('OTP verification failed');
+        }
+      } else {
+        // Re-throw other errors
+        rethrow;
+      }
+    }
+    
+    print('OTP verification successful');
+    
+    if (userCredential?.user != null) {
+      // Immediately sign out from Firebase since we only use it for OTP
+      await _auth.signOut();
+      print('Signed out from Firebase after OTP verification');
+      // Handle Supabase operations
+      await _handleSupabaseOperations();
+    } else {
+      throw Exception('OTP verification failed');
+    }
+  } catch (e) {
+    setState(() {
+      _isLoading = false;
+    });
+    print('OTP verification error: $e');
+    _showToast('OTP verification failed: $e');
+  }
+}
+Future<void> _handleSupabaseOperations() async {
+  try {
+    _showToast('Phone verification successful!');
+    
+    String? userId;
+    String userName;
+
+    if (_isExistingUser) {
+      // Existing user - use stored data
+      userId = _existingUserId;
+      userName = _existingUserName;
+    } else {
+      // New user - create account in Supabase
+      if (_nameController.text.trim().isEmpty) {
+        _showToast('Name is required for new users');
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+      
+      userId = await _saveUserToSupabase(
+        _nameController.text.trim(),
+        _completePhoneNumber,
+      );
+      userName = _nameController.text.trim();
+    }
+
+    if (userId != null) {
+      // Save user data locally (no Firebase UID since we don't store Firebase sessions)
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('userName', userName);
+      await prefs.setString('userPhone', _completePhoneNumber);
+      await prefs.setString('userId', userId); // Only Supabase UUID
+      await prefs.setBool('isLoggedIn', true);
+      
+      print('User data saved locally. Supabase UserId: $userId');
+      
+      // Navigate to home page
+      _navigateToHome(userId);
+    } else {
+      _showToast('Failed to save user data');
       setState(() {
         _isLoading = false;
       });
-      _showToast('Sign in failed: $e');
     }
+  } catch (error) {
+    print('Error in _handleSupabaseOperations: $error');
+    _showToast('Failed to complete registration: $error');
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
+
+Future<void> _saveUserDataLocally() async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    
+    // Use the data we already have
+    final userName = _isExistingUser ? _existingUserName : _nameController.text.trim();
+    
+    await prefs.setString('userName', userName);
+    await prefs.setString('userPhone', _completePhoneNumber);
+    await prefs.setString('userId', _existingUserId); // Supabase UUID
+    await prefs.setBool('isLoggedIn', true);
+    
+    print('User data saved locally. UserId: $_existingUserId'); // Debug print
+  } catch (error) {
+    print('Error saving user data locally: $error'); // Debug print
+    _showToast('Failed to save user data: $error');
+    throw error; // Re-throw to handle in calling function
+  }
+}
 
   // Save user data to local storage and Supabase
   Future<String?> _saveUserData(fb_auth.User user) async {
+  try {
     String? userId;
     String userName;
 
@@ -361,6 +662,11 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
       userName = _existingUserName;
     } else {
       // New user - save their data
+      if (_nameController.text.trim().isEmpty) {
+        _showToast('Name is required for new users');
+        return null;
+      }
+      
       userId = await _saveUserToSupabase(
         _nameController.text.trim(),
         _completePhoneNumber,
@@ -372,13 +678,22 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userName', userName);
       await prefs.setString('userPhone', _completePhoneNumber);
-      await prefs.setString('userId', userId); // Supabase UUID
+      await prefs.setString('userId', userId); // Supabase UUID  
       await prefs.setString('firebaseUserId', user.uid); // Firebase UID
       await prefs.setBool('isLoggedIn', true);
+      
+      print('User data saved successfully. UserId: $userId'); // Debug print
+      return userId;
+    } else {
+      print('Failed to get userId from database operations'); // Debug print
+      return null;
     }
-
-    return userId; // Return the userId for navigation
+  } catch (error) {
+    print('Error in _saveUserData: $error'); // Debug print
+    _showToast('Failed to save user data: $error');
+    return null;
   }
+}
 
   // Resend OTP
   Future<void> _resendOTP() async {
@@ -405,7 +720,7 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
           _startResendTimer();
         },
         codeAutoRetrievalTimeout: (String verificationId) {
-          _verificationId = verificationId;
+         // _verificationId = verificationId;
         },
         timeout: const Duration(seconds: 60),
       );
@@ -858,13 +1173,70 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
                 // Terms and conditions
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  child: Text(
-                    'By continuing, you agree to our Terms of Service and Privacy Policy',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[600],
-                    ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Checkbox(
+                            value: _termsAccepted,
+                            onChanged: (bool? value) {
+                              if (value == true) {
+                                _showTermsDialog();
+                              } else {
+                                setState(() {
+                                  _termsAccepted = false;
+                                });
+                              }
+                            },
+                            activeColor: Colors.blue[600],
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () => _showTermsDialog(),
+                              child: RichText(
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                  children: [
+                                    const TextSpan(text: 'I agree to the '),
+                                    TextSpan(
+                                      text: 'Terms & Conditions',
+                                      style: TextStyle(
+                                        color: Colors.blue[600],
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                    const TextSpan(text: ' including phone number sharing for pet-related communication'),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (!_termsAccepted)
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[50],
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: Colors.orange[200]!),
+                          ),
+                          child: Text(
+                            '⚠️ Your phone number will be visible to other users',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.orange[800],
+                              fontWeight: FontWeight.w500,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
@@ -877,3 +1249,4 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
     );
   }
 }
+

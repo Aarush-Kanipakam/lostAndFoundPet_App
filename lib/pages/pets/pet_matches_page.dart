@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math'; // Add this import for mathematical functions
+import 'package:url_launcher/url_launcher.dart';
 class PetMatchesPage extends StatefulWidget {
   const PetMatchesPage({Key? key}) : super(key: key);
 
@@ -633,7 +634,7 @@ class PetDetailModal extends StatelessWidget {
 
                       const SizedBox(height: 24),
                       
-                      // Contact Information - Updated to show name and phone
+                      // Contact Information - Updated to show name and phone with call and WhatsApp buttons
                       if (pet['users'] != null)
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -649,8 +650,9 @@ class PetDetailModal extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.grey[100],
+                                color: Colors.grey[50],
                                 borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.grey[300]!),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -664,13 +666,140 @@ class PetDetailModal extends StatelessWidget {
                                     'Phone: ${pet['users']['phone'] ?? 'Not provided'}',
                                     style: const TextStyle(fontSize: 14),
                                   ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      // Call Button
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            final phone = pet['users']['phone'];
+                                            if (phone != null && phone.isNotEmpty) {
+                                              final Uri phoneUri = Uri(scheme: 'tel', path: phone);
+                                              if (await canLaunchUrl(phoneUri)) {
+                                                await launchUrl(phoneUri);
+                                              } else {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('Could not launch phone dialer'),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.blue[600],
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.phone,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                const Text(
+                                                  'Call',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      // WhatsApp Button
+                                      
+                                      Expanded(
+                                        child: GestureDetector(
+                                          onTap: () async {
+                                            final phone = pet['users']['phone'];
+                                            if (phone != null && phone.isNotEmpty) {
+                                              // Remove any spaces, dashes, or special characters
+                                              String cleanPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+                                              
+                                              // Add country code if not present (assuming India +91)
+                                              if (!cleanPhone.startsWith('+')) {
+                                                if (cleanPhone.startsWith('91')) {
+                                                  cleanPhone = '+$cleanPhone';
+                                                } else {
+                                                  cleanPhone = '+91$cleanPhone';
+                                                }
+                                              }
+                                              
+                                              // Remove the + for WhatsApp URL
+                                              String whatsappPhone = cleanPhone.replaceAll('+', '');
+                                              
+                                              // Try different WhatsApp URL schemes
+                                              final List<String> whatsappUrls = [
+                                                'whatsapp://send?phone=$whatsappPhone',
+                                                'https://api.whatsapp.com/send?phone=$whatsappPhone',
+                                                'https://wa.me/$whatsappPhone',
+                                              ];
+                                              
+                                              bool launched = false;
+                                              
+                                              for (String url in whatsappUrls) {
+                                                final Uri uri = Uri.parse(url);
+                                                if (await canLaunchUrl(uri)) {
+                                                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                                                  launched = true;
+                                                  break;
+                                                }
+                                              }
+                                              
+                                              if (!launched) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text('WhatsApp is not installed or could not be opened'),
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green[600],
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(
+                                                  Icons.chat,
+                                                  color: Colors.white,
+                                                  size: 18,
+                                                ),
+                                                const SizedBox(width: 6),
+                                                const Text(
+                                                  'WhatsApp',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                      
-                      // Add some bottom padding for better spacing
                       const SizedBox(height: 20),
                     ],
                   ),

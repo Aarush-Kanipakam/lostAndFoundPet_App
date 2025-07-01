@@ -201,7 +201,7 @@ class _LocationSearchFieldState extends State<LocationSearchField> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error searching locations: $e')),
+          SnackBar(content: Text('Please type a more detailed address')),
         );
       }
     } finally {

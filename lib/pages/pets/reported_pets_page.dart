@@ -100,47 +100,97 @@ class _ReportedPetsPageState extends State<ReportedPetsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  
-                    Navigator.pushNamed(
-                      context, 
-                      '/matches',
-                      arguments: {
-                        'userReportId': _userId, 
-                        'reportType': reportType, 
-                        'petType': petType,
-                        'reportId': report['id'] // Add this line to pass the specific report ID
-                      },
-                    );
-                  // ok?
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Checking matches for ${reportType.toLowerCase()} $petType...'),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      
+                        Navigator.pushNamed(
+                          context, 
+                          '/matches',
+                          arguments: {
+                            'userReportId': _userId, 
+                            'reportType': reportType, 
+                            'petType': petType,
+                            'reportId': report['id'] // Add this line to pass the specific report ID
+                          },
+                        );
+                      
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Checking matches for ${reportType.toLowerCase()} $petType...'),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: iconColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: iconColor,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                child: const Text(
-                  'Check Matches',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                    child: const Text(
+                      'Check Matches',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        ),
+                const SizedBox(width: 8),
+                // Fixed resolve button section
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        // Show loading indicator
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Deleting report...')),
+                        );
+
+                        await Supabase.instance.client
+                            .from('pet_reports')
+                            .delete()
+                            .eq('id', report['id']);
+
+                        // Check if deletion was successful and refresh the list
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Report deleted successfully.')),
+                        );
+                        
+                        // Refresh the pet reports list after successful deletion
+                        _fetchPetReports();
+                        
+                      } catch (error) {
+                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to delete report: $error')),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.grey[400],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text(
+                      'Resolve Issue',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                            ],
+          ),
+        ],
       ),
+    ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -4,6 +4,7 @@ import '/widgets/picture_upload_section.dart';
 import '/widgets/location_picker_field.dart';
 import 'dart:io';
 import '/services/pet_report_service.dart';
+
 // Main report page - Step 1
 class ReportLostPetPage extends StatefulWidget {
   const ReportLostPetPage({Key? key}) : super(key: key);
@@ -32,111 +33,215 @@ class _ReportLostPetPageState extends State<ReportLostPetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Report Lost Pet'),
-        backgroundColor: Colors.red[400],
-        foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Let\'s start with basic information:',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-              ),
-              const SizedBox(height: 20),
-
-              // Pet Name
-              TextFormField(
-                controller: _petNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Pet Name',
-                  hintText: 'e.g. Bruno',
-                  border: OutlineInputBorder(),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: Column(
+        children: [
+          // Custom App Bar
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 15, 20, 20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your pet\'s name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-
-              // Pet Type Dropdown
-              DropdownButtonFormField<String>(
-                decoration: const InputDecoration(
-                  labelText: 'Pet Type',
-                  border: OutlineInputBorder(),
-                ),
-                value: selectedPetType,
-                items: const [
-                  DropdownMenuItem(value: 'dog', child: Text('Dog')),
-                  DropdownMenuItem(value: 'cat', child: Text('Cat')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    selectedPetType = value;
-                  });
-                },
-                validator: (value) {
-                  if (value == null) {
-                    return 'Please select pet type';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 30),
-
-              // Next Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // Navigate to specific pet page
-                      if (selectedPetType == 'dog') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => DogDetailsPage(
-                              petName: _petNameController.text,
-                              userId: _userId,
-                            ),
-                          ),
-                        );
-                      } else if (selectedPetType == 'cat') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => CatDetailsPage(
-                              petName: _petNameController.text,
-                              userId: _userId,
-                            ),
-                          ),
-                        );
-                      }
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[400],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+              ],
+            ),
+            child: Row(
+              children: [
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => Navigator.pushReplacementNamed(context, '/home'),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: const Icon(Icons.arrow_back, color: Color(0xFFEF4444)),
+                    ),
                   ),
-                  child: const Text('Next', style: TextStyle(fontSize: 16)),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Report Lost Pet',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Main Content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Let\'s start with basic information:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Pet Name
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: TextFormField(
+                        controller: _petNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Pet Name',
+                          hintText: 'e.g. Bruno',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your pet\'s name';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Pet Type Dropdown
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: DropdownButtonFormField<String>(
+                        decoration: const InputDecoration(
+                          labelText: 'Pet Type',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(12)),
+                            borderSide: BorderSide.none,
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        ),
+                        value: selectedPetType,
+                        items: const [
+                          DropdownMenuItem(value: 'dog', child: Text('Dog')),
+                          DropdownMenuItem(value: 'cat', child: Text('Cat')),
+                        ],
+                        onChanged: (value) {
+                          setState(() {
+                            selectedPetType = value;
+                          });
+                        },
+                        validator: (value) {
+                          if (value == null) {
+                            return 'Please select pet type';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Next Button
+                    Container(
+                      width: double.infinity,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFEF4444).withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            // Navigate to specific pet page
+                            if (selectedPetType == 'dog') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => DogDetailsPage(
+                                    petName: _petNameController.text,
+                                    userId: _userId,
+                                  ),
+                                ),
+                              );
+                            } else if (selectedPetType == 'cat') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CatDetailsPage(
+                                    petName: _petNameController.text,
+                                    userId: _userId,
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

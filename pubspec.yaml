@@ -72,10 +72,18 @@ dependencies:
   # Phone number validation (optional - for format checking)
   phone_numbers_parser: ^8.3.0
 
+  # URL launcher for phone calls, emails, web links
+  url_launcher: ^6.2.1
+
 dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/dogapp_logo.png"
 
 flutter:
   uses-material-design: true
@@ -83,6 +91,7 @@ flutter:
   # Add your app assets here
   assets:
     - .env
+    - assets/dogapp_logo.png
 
   
   # Add custom fonts if needed
