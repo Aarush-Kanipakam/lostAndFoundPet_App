@@ -11,7 +11,8 @@ import 'pages/pets/report_lost_pet_page.dart';
 import 'pages/pets/reported_pets_page.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/pets/pet_matches_page.dart';
-
+import 'pages/pets/put_up_for_adoption_page.dart';
+import 'pages/pets/pet_adoption_matches_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -71,6 +72,8 @@ class MyApp extends StatelessWidget {
         '/found': (context) => const ReportFoundPetPage(),
         '/reported': (context) => const ReportedPetsPage(),
         '/matches': (context) => const PetMatchesPage(),
+        '/putUpForAdoption': (context) => const PutUpForAdoptionPage(),
+        '/adoptionMatches': (context) => const PetAdoptionMatchesPage(),
       },
       debugShowCheckedModeBanner: false,
     );

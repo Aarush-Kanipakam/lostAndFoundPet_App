@@ -80,4 +80,47 @@ class PetReportService {
       return false;
     }
   }
+
+    Future<bool> submitPetForAdoption({
+    required String? userId,
+    required String petName,
+    required String petType,
+    required String age,
+    required String gender,
+    required String breed,
+    required String sterilized,
+    required String vaccinated, // Assuming vaccination is not required for adoption
+    required String locationAddress,
+    required double? latitude,
+    required double? longitude,
+    required String additionalDetails,
+    String? imageUrl,
+  }) async {
+    try {
+      final response = await _client.from('adoption_pets').insert({
+        'user_id': userId,
+        'pet_name': petName,
+        'pet_type': petType.toLowerCase(), // 'dog' or 'cat'
+   
+        'age': age,
+
+        'gender': gender,   // male or female
+        'breed': breed,
+        'sterilized': sterilized,    //yes or no
+        'vaccinated': vaccinated, // Assuming vaccination is not required for adoption
+        'location_address': locationAddress,
+        'latitude': latitude,
+        'longitude': longitude,
+        'additional_details': additionalDetails,
+        'image_url': imageUrl,
+        'status': 'active',
+        'created_at': DateTime.now().toIso8601String(),
+      });
+
+      return true;
+    } catch (e) {
+      print('Error submitting pet report: $e');
+      return false;
+    }
+  }
 }

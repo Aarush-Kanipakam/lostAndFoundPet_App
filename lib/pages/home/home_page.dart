@@ -382,50 +382,34 @@ class _HomePageState extends State<HomePage> {
                         );
                       },
                     ),
+                    _buildActionCard(
+                      title: 'Put up for adoption',
+                      subtitle: 'Help a pet find a new home',
+                      icon: Icons.home,
+                      color: const Color.fromARGB(255, 40, 16, 94),
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context, 
+                          '/putUpForAdoption',
+                          arguments: {'userId': _userId},
+                        );
+                      },
+                    ),
+                    _buildActionCard(
+                      title: 'Adopt a pet',
+                      subtitle: 'Find your new best friend',
+                      icon: Icons.favorite,
+                      color: const Color.fromARGB(255, 255, 0, 230),
+                      onTap: () {
+                        Navigator.pushNamed(
+                          context, 
+                          '/adoptionMatches',
+                          arguments: {'userId': _userId},
+                        );
+                      },
+                    ),
 
-                    // // User Info (for debugging - can be removed in production)
-                    // if (_userId != null) ...[
-                    //   const SizedBox(height: 24),
-                    //   Container(
-                    //     padding: const EdgeInsets.all(16),
-                    //     decoration: BoxDecoration(
-                    //       color: Colors.grey[50],
-                    //       borderRadius: BorderRadius.circular(12),
-                    //       border: Border.all(color: Colors.grey[200]!),
-                    //     ),
-                    //     child: Column(
-                    //       crossAxisAlignment: CrossAxisAlignment.start,
-                    //       children: [
-                    //         Text(
-                    //           'Debug Info',
-                    //           style: TextStyle(
-                    //             fontSize: 12,
-                    //             fontWeight: FontWeight.w500,
-                    //             color: Colors.grey[600],
-                    //           ),
-                    //         ),
-                    //         const SizedBox(height: 8),
-                    //         Text(
-                    //           'User ID: $_userId',
-                    //           style: TextStyle(
-                    //             fontSize: 11,
-                    //             color: Colors.grey[500],
-                    //             fontFamily: 'monospace',
-                    //           ),
-                    //         ),
-                    //         if (_userPhone != null) 
-                    //           Text(
-                    //             'Phone: $_userPhone',
-                    //             style: TextStyle(
-                    //               fontSize: 11,
-                    //               color: Colors.grey[500],
-                    //               fontFamily: 'monospace',
-                    //             ),
-                    //           ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ],
+
                   ],
                 ),
               ),
