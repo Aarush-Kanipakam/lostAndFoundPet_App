@@ -4,7 +4,7 @@ import '/widgets/picture_upload_section.dart';
 import '/widgets/location_picker_field.dart';
 import 'dart:io';
 import '/services/pet_report_service.dart';
-
+import 'package:supabase_flutter/supabase_flutter.dart';
 // Main report page - Step 1
 class PutUpForAdoptionPage extends StatefulWidget {
   const PutUpForAdoptionPage({Key? key}) : super(key: key);
@@ -18,15 +18,99 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
   final _petNameController = TextEditingController();
   String? selectedPetType;
   String? _userId;
+  
+  // New state variables for pet management
+  List<Map<String, dynamic>> _userPets = [];
+  bool _isLoadingPets = false;
+  bool _showPetsList = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     
-    // ADD THIS METHOD - Get userId from route arguments
+    // Get userId from route arguments
     final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
     if (arguments != null && arguments['userId'] != null) {
       _userId = arguments['userId'] as String;
+    }
+  }
+
+  // Fetch user's pets from database
+  Future<void> _fetchUserPets() async {
+    if (_userId == null) return;
+    
+    setState(() {
+      _isLoadingPets = true;
+    });
+
+    try {
+      final response = await Supabase.instance.client
+          .from('adoption_pets')
+          .select('*')
+          .eq('user_id', _userId!)
+          .order('created_at', ascending: false);
+
+      setState(() {
+        _userPets = List<Map<String, dynamic>>.from(response);
+        _isLoadingPets = false;
+        _showPetsList = true;
+      });
+    } catch (error) {
+      setState(() {
+        _isLoadingPets = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error loading pets: $error')),
+      );
+    }
+  }
+
+  // Delete a pet from database
+  Future<void> _deletePet(String petId, String petName) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Delete $petName?'),
+        content: const Text('This action cannot be undone. The pet will be removed from adoption listings.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await Supabase.instance.client
+            .from('adoption_pets')
+            .delete()
+            .eq('id', petId);
+
+        setState(() {
+          _userPets.removeWhere((pet) => pet['id'].toString() == petId);
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$petName deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error deleting pet: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -64,185 +148,327 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  'Put up for Adoption',
-                  style: TextStyle(
+                Text(
+                  _showPetsList ? 'My Pets for Adoption' : 'Put up for Adoption',
+                  style: const TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
                     color: Colors.black87,
+                  ),
+                ),
+                const Spacer(),
+                // Toggle button between form and pets list
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: _showPetsList ? () {
+                      setState(() {
+                        _showPetsList = false;
+                      });
+                    } : _fetchUserPets,
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      child: Icon(
+                        _showPetsList ? Icons.add : Icons.pets,
+                        color: const Color(0xFFEF4444),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
 
-          // Main Content
+          // Main Content - conditional rendering
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Let\'s start with basic information:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Pet Name
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextFormField(
-                        controller: _petNameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Pet Name',
-                          hintText: 'e.g. Bruno',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your pet\'s name';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Pet Type Dropdown
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        decoration: const InputDecoration(
-                          labelText: 'Pet Type',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(12)),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: Colors.white,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        ),
-                        value: selectedPetType,
-                        items: const [
-                          DropdownMenuItem(value: 'dog', child: Text('Dog')),
-                          DropdownMenuItem(value: 'cat', child: Text('Cat')),
-                        ],
-                        onChanged: (value) {
-                          setState(() {
-                            selectedPetType = value;
-                          });
-                        },
-                        validator: (value) {
-                          if (value == null) {
-                            return 'Please select pet type';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-
-                    // Next Button
-                    Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFEF4444).withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            // Navigate to specific pet page
-                            if (selectedPetType == 'dog') {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => DogDetailsPage(
-                                    petName: _petNameController.text,
-                                    userId: _userId,
-                                  ),
-                                ),
-                              );
-                            } else if (selectedPetType == 'cat') {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CatDetailsPage(
-                                    petName: _petNameController.text,
-                                    userId: _userId,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          shadowColor: Colors.transparent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: const Text(
-                          'Next',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: _showPetsList ? _buildPetsList() : _buildForm(),
           ),
         ],
       ),
+    );
+  }
+
+  // Build the original form
+  Widget _buildForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Let\'s start with basic information:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Pet Name
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TextFormField(
+                controller: _petNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Pet Name',
+                  hintText: 'e.g. Bruno',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your pet\'s name';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Pet Type Dropdown
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: DropdownButtonFormField<String>(
+                decoration: const InputDecoration(
+                  labelText: 'Pet Type',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
+                    borderSide: BorderSide.none,
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+                value: selectedPetType,
+                items: const [
+                  DropdownMenuItem(value: 'dog', child: Text('Dog')),
+                  DropdownMenuItem(value: 'cat', child: Text('Cat')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    selectedPetType = value;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select pet type';
+                  }
+                  return null;
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Next Button
+            Container(
+              width: double.infinity,
+              height: 56,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                ),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFEF4444).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    // Navigate to specific pet page
+                    if (selectedPetType == 'dog') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DogDetailsPage(
+                            petName: _petNameController.text,
+                            userId: _userId,
+                          ),
+                        ),
+                      );
+                    } else if (selectedPetType == 'cat') {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CatDetailsPage(
+                            petName: _petNameController.text,
+                            userId: _userId,
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Next',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Build the pets list view
+  Widget _buildPetsList() {
+    if (_isLoadingPets) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Color(0xFFEF4444)),
+            SizedBox(height: 16),
+            Text('Loading your pets...'),
+          ],
+        ),
+      );
+    }
+
+    if (_userPets.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.pets, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'No pets listed for adoption yet',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Tap the + button to add your first pet',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: _userPets.length,
+      itemBuilder: (context, index) {
+        final pet = _userPets[index];
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            leading: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: pet['pet_type'] == 'dog' ? Colors.blue[100] : Colors.orange[100],
+                borderRadius: BorderRadius.circular(25),
+              ),
+              child: Icon(
+                Icons.pets,
+                color: pet['pet_type'] == 'dog' ? Colors.blue[600] : Colors.orange[600],
+                size: 24,
+              ),
+            ),
+            title: Text(
+              pet['pet_name'] ?? 'Unknown',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 4),
+                Text(
+                  '${pet['pet_type']?.toString().toUpperCase() ?? 'UNKNOWN'} • ${pet['breed'] ?? 'Mixed breed'}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Age: ${pet['age'] ?? 'Unknown'} • Gender: ${pet['gender'] ?? 'Unknown'}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 24),
+              onPressed: () => _deletePet(
+                pet['id'].toString(), 
+                pet['pet_name'] ?? 'this pet'
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -252,7 +478,6 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
     super.dispose();
   }
 }
-
 // Dog Details Page - Step 2
 class DogDetailsPage extends StatefulWidget {
   final String petName;
