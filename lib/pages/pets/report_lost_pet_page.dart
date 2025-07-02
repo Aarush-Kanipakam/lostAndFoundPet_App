@@ -33,15 +33,15 @@ class _ReportLostPetPageState extends State<ReportLostPetPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color.fromARGB(255, 252, 248, 248),
       body: Column(
         children: [
           // Custom App Bar
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 15, 20, 20),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 8, 10, 10),
             decoration: const BoxDecoration(
-              color: Colors.white,
+              color: Colors.red,
               boxShadow: [
                 BoxShadow(
                   color: Color(0x0A000000),
@@ -59,7 +59,7 @@ class _ReportLostPetPageState extends State<ReportLostPetPage> {
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
                       padding: const EdgeInsets.all(8),
-                      child: const Icon(Icons.arrow_back, color: Color(0xFFEF4444)),
+                      child: const Icon(Icons.arrow_back, color: Color.fromARGB(255, 255, 255, 255)),
                     ),
                   ),
                 ),
@@ -69,7 +69,7 @@ class _ReportLostPetPageState extends State<ReportLostPetPage> {
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+                    color: Color.fromARGB(255, 255, 255, 255),
                   ),
                 ),
               ],
@@ -290,7 +290,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.petName} - Dog Details'),
-        backgroundColor: Colors.red[400],
+        backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
       body: LayoutBuilder(
@@ -898,7 +898,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.petName} - Cat Details'),
-        backgroundColor: Colors.red[400],
+        backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
       body: LayoutBuilder(

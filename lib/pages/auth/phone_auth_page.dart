@@ -306,11 +306,7 @@ class _PhoneAuthPageState extends State<PhoneAuthPage> {
   Future<void> _dummyLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Check if terms are accepted
-    if (!_termsAccepted) {
-      _showToast('Please read and accept the Terms & Conditions first');
-      return;
-    }
+    
     setState(() {
       _isDummyLoading = true;
     });

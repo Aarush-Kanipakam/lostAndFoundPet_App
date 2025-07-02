@@ -197,7 +197,7 @@ class _ReportedPetsPageState extends State<ReportedPetsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Your Pets'),
-        backgroundColor: Colors.green[400],
+        backgroundColor: const Color.fromARGB(255, 193, 71, 234),
         foregroundColor: Colors.white,
         actions: [
           IconButton(

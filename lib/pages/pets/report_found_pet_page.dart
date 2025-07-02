@@ -34,8 +34,8 @@ class _ReportFoundPetPageState extends State<ReportFoundPetPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Report Found Pet'),
-        backgroundColor: Colors.red[400],
-        foregroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(170, 26, 170, 42),
+        foregroundColor: const Color.fromARGB(255, 255, 255, 255),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
@@ -127,7 +127,7 @@ class _ReportFoundPetPageState extends State<ReportFoundPetPage> {
                     }
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red[400],
+                    backgroundColor: const Color.fromARGB(170, 26, 170, 42),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
@@ -184,7 +184,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.petName} - Dog Details'),
-        backgroundColor: Colors.red[400],
+        backgroundColor: const Color.fromARGB(170, 26, 170, 42),
         foregroundColor: Colors.white,
       ),
       body: LayoutBuilder(
@@ -605,7 +605,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitReport,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[400],
+                            backgroundColor: const Color.fromARGB(170, 26, 170, 42),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
@@ -773,7 +773,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.petName} - Cat Details'),
-        backgroundColor: Colors.red[400],
+        backgroundColor: const Color.fromARGB(170, 26, 170, 42),
         foregroundColor: Colors.white,
       ),
       body: LayoutBuilder(
@@ -1187,7 +1187,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                         child: ElevatedButton(
                           onPressed: _isSubmitting ? null : _submitReport,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red[400],
+                            backgroundColor: const Color.fromARGB(170, 26, 170, 42),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),

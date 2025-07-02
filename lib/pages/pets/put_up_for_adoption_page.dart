@@ -123,7 +123,7 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
           // Custom App Bar
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 15, 20, 20),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 8, 10, 10),
             decoration: const BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -349,11 +349,40 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
                 ),
               ),
             ),
-          ],
-        ),
+
+            const SizedBox(height: 70),
+            Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                '🐾',
+                style: TextStyle(fontSize: 18),
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'DON\'T FORGET TO CLICK THE PAW BUTTON IN THE TOP RIGHT AND REMOVE YOUR PET THAT HAS ALREADY BEEN SENT FOR ADOPTION',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black54,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '🐾',
+                style: TextStyle(fontSize: 18),
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
+  
 
   // Build the pets list view
   Widget _buildPetsList() {
