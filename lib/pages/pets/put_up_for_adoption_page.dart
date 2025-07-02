@@ -234,12 +234,12 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
                   fillColor: Colors.white,
                   contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your pet\'s name';
-                  }
-                  return null;
-                },
+                // validator: (value) {
+                //   if (value == null || value.isEmpty) {
+                //     return 'Please enter your pet\'s name';
+                //   }
+                //   return null;
+                // },
               ),
             ),
             const SizedBox(height: 20),
@@ -724,7 +724,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                       /// Location Lost Field (User Input)
                       LocationSearchField(
                         controller: _locationController,
-                        labelText: 'Location Lost/Found',
+                        labelText: 'Location',
                         hintText: 'Type to search location',
                         onLocationSelected: (LocationData? location) {
                           setState(() {
@@ -733,8 +733,8 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           
                           if (location != null) {
                             print('Address: ${location.address}');
-                            print('Latitude: ${location.latitude}');
-                            print('Longitude: ${location.longitude}');
+                            // print('Latitude: ${location.latitude}');
+                            // print('Longitude: ${location.longitude}');
                           }
                         },
                         validator: (value) {
@@ -759,7 +759,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                                    style: TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 4),
                                 Text('Address: ${selectedLocation!.address}'),
-                                Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
+                               // Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
                               ],
                             ),
                           ),
@@ -789,12 +789,12 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           border: OutlineInputBorder(),
                         ),
                         maxLines: 4,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please provide additional details';
-                          }
-                          return null;
-                        },
+                        // validator: (value) {
+                        //   if (value == null || value.isEmpty) {
+                        //     return 'Please provide additional details';
+                        //   }
+                        //   return null;
+                        // },
                       ),
                       const SizedBox(height: 30),
 
@@ -1141,7 +1141,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                       /// Location Lost Field (User Input)
                       LocationSearchField(
                         controller: _locationController,
-                        labelText: 'Location Lost/Found',
+                        labelText: 'Location',
                         hintText: 'Type to search location',
                         onLocationSelected: (LocationData? location) {
                           setState(() {
@@ -1176,7 +1176,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                                    style: TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 4),
                                 Text('Address: ${selectedLocation!.address}'),
-                                Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
+                                //Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
                               ],
                             ),
                           ),

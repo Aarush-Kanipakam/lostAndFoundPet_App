@@ -27,7 +27,7 @@
         <package android:name="com.whatsapp" />
     </queries>
     <application
-        android:label="dogapp"
+        android:label="PawPal"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:hardwareAccelerated="true">

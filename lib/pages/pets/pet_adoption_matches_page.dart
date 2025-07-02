@@ -22,7 +22,7 @@ class _PetAdoptionMatchesPageState extends State<PetAdoptionMatchesPage> {
   bool _isLoadingMore = false;
   bool _showMatches = false;
   String? _errorMessage;
-  
+  String? _userId;
   // Pagination variables
   int _currentPage = 0;
   final int _pageSize = 10; // Load 10 items at a time
@@ -35,6 +35,17 @@ class _PetAdoptionMatchesPageState extends State<PetAdoptionMatchesPage> {
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
+  }
+
+    @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    
+    // Get userId from route arguments
+    final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    if (arguments != null && arguments['userId'] != null) {
+      _userId = arguments['userId'] as String;
+    }
   }
 
   @override
@@ -52,6 +63,7 @@ class _PetAdoptionMatchesPageState extends State<PetAdoptionMatchesPage> {
       }
     }
   }
+  
 
   Future<void> _searchMatches() async {
   if (_selectedPetType == null || selectedLocation == null) {
@@ -95,7 +107,7 @@ class _PetAdoptionMatchesPageState extends State<PetAdoptionMatchesPage> {
         .from('adoption_pets')
         .select('*, users!user_id(name, phone)')
         .eq('pet_type', _selectedPetType!)
-       
+        .neq('user_id', _userId!)
         .order('created_at', ascending: false);
 
     final allMatches = List<Map<String, dynamic>>.from(response);

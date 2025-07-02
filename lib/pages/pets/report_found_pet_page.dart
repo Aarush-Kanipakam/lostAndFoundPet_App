@@ -62,12 +62,12 @@ class _ReportFoundPetPageState extends State<ReportFoundPetPage> {
                   hintText: 'Unknown, except if name on collar',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your pet\'s name';
-                  }
-                  return null;
-                },
+                // validator: (value) {
+                //   if (value == null || value.isEmpty) {
+                //     return 'Please enter your pet\'s name';
+                //   }
+                //   return null;
+                // },
               ),
               const SizedBox(height: 20),
 
@@ -544,7 +544,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                        /// Location Lost Field (User Input)
                       LocationSearchField(
                         controller: _locationController,
-                        labelText: 'Location Lost/Found',
+                        labelText: 'Location Found',
                         hintText: 'Type to search location',
                         onLocationSelected: (LocationData? location) {
                           setState(() {
@@ -566,7 +566,24 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                       ),
                       
                       const SizedBox(height: 16),
-
+                       // Show selected location details
+                      if (selectedLocation != null)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Selected Location:',
+                                   style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text('Address: ${selectedLocation!.address}'),
+                             //   Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
+                              ],
+                            ),
+                          ),
+                        ),
+                                const SizedBox(height: 16),
                       /// Picture Upload Section
                       /// 
                       PictureUploadSection(
@@ -590,12 +607,12 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           border: OutlineInputBorder(),
                         ),
                         maxLines: 4,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please provide additional details';
-                          }
-                          return null;
-                        },
+                        // validator: (value) {
+                        //   if (value == null || value.isEmpty) {
+                        //     return 'Please provide additional details';
+                        //   }
+                        //   return null;
+                        // },
                       ),
                       const SizedBox(height: 30),
 
@@ -1127,7 +1144,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                        /// Location Lost Field (User Input)
                       LocationSearchField(
                         controller: _locationController,
-                        labelText: 'Location Lost/Found',
+                        labelText: 'Location Found',
                         hintText: 'Type to search location',
                         onLocationSelected: (LocationData? location) {
                           setState(() {
@@ -1147,9 +1164,30 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                           return null;
                         },
                       ),
+
                       
                       const SizedBox(height: 16),
 
+
+                        // Show selected location details
+                      if (selectedLocation != null)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Selected Location:',
+                                   style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4),
+                                Text('Address: ${selectedLocation!.address}'),
+                             //   Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
+                              ],
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
                       /// Picture Upload Section
                       PictureUploadSection(
                         title: 'Pet Photo',
@@ -1172,12 +1210,12 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                           border: OutlineInputBorder(),
                         ),
                         maxLines: 4,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please provide additional details';
-                          }
-                          return null;
-                        },
+                        // validator: (value) {
+                        //   if (value == null || value.isEmpty) {
+                        //     return 'Please provide additional details';
+                        //   }
+                        //   return null;
+                        // },
                       ),
                       const SizedBox(height: 30),
 
