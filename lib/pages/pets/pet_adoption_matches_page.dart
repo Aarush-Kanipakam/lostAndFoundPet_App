@@ -339,7 +339,7 @@ if (selectedLocation != null)
              style: TextStyle(fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
           Text('Address: ${selectedLocation!.address}'),
-          Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
+          //Text('Coordinates: ${selectedLocation!.latitude.toStringAsFixed(6)}, ${selectedLocation!.longitude.toStringAsFixed(6)}'),
         ],
       ),
     ),
@@ -533,7 +533,7 @@ if (selectedLocation != null)
                           padding: const EdgeInsets.all(16),
                           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: 2,
-                            childAspectRatio: 0.59,
+                            childAspectRatio: 0.5,
                             crossAxisSpacing: 16,
                             mainAxisSpacing: 16,
                           ),

@@ -141,9 +141,18 @@ class _PetMatchesPageState extends State<PetMatchesPage> {
 ) {
   return matches.map((match) {
     double similarity = _calculateSimilarity(match, userPet);
+    double distance = double.infinity;
+    if (userPet['latitude'] != null && userPet['longitude'] != null &&
+        match['latitude'] != null && match['longitude'] != null) {
+      distance = _calculateDistance(
+        userPet['latitude'], userPet['longitude'],
+        match['latitude'], match['longitude']
+      );
+    }
     return {
       ...match,
       'similarity_score': similarity,
+      'distance_km': distance,
     };
   }).toList()
     ..sort((a, b) => b['similarity_score'].compareTo(a['similarity_score']));
@@ -355,7 +364,7 @@ double _degreesToRadians(double degrees) {
                             padding: const EdgeInsets.all(16),
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              childAspectRatio: 0.6,
+                              childAspectRatio: 0.5,
                               crossAxisSpacing: 16,
                               mainAxisSpacing: 16,
                             ),
@@ -417,6 +426,13 @@ class PetMatchCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+
+    final distance = pet['distance_km'];
+  final distanceText = distance != null && distance != double.infinity
+      ? distance < 1 
+          ? '${(distance * 1000).round()}m away'
+          : '${distance.toStringAsFixed(1)}km away'
+      : 'Distance unknown';
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -474,6 +490,20 @@ class PetMatchCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+
+                  const SizedBox(height: 1),
+                  Flexible(
+                    child: Text(
+                      distanceText,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.green[600],
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                   const Spacer(),
                   // Button with minimal height
                   SizedBox(
@@ -513,6 +543,12 @@ class PetDetailModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final distance = pet['distance_km'];
+  final distanceText = distance != null && distance != double.infinity
+      ? distance < 1 
+          ? '${(distance * 1000).round()}m away'
+          : '${distance.toStringAsFixed(1)}km away'
+      : 'Distance unknown';
     return DraggableScrollableSheet(
       initialChildSize: 0.9,
       minChildSize: 0.5,
@@ -566,12 +602,33 @@ class PetDetailModal extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Pet Name
-                      Text(
-                        pet['pet_name'] ?? 'Unknown Pet',
-                        style: const TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              pet['pet_name'] ?? 'Unknown Pet',
+                              style: const TextStyle(
+                                fontSize: 28,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green[100],
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              distanceText,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
 

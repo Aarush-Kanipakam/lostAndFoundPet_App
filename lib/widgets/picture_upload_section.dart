@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 class PictureUploadSection extends StatefulWidget {
   final Function(File?)? onImageSelected;
   final String? initialImagePath;
+  final String? existingImageUrl; // Added this parameter
   final String title;
   final String buttonText;
   final double? imageHeight;
@@ -14,6 +15,7 @@ class PictureUploadSection extends StatefulWidget {
     Key? key,
     this.onImageSelected,
     this.initialImagePath,
+    this.existingImageUrl, // Added this
     this.title = 'Add Picture',
     this.buttonText = 'Choose Photo',
     this.imageHeight = 200,
@@ -119,10 +121,13 @@ class _PictureUploadSectionState extends State<PictureUploadSection> {
         border: Border.all(color: Colors.grey),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: _selectedImage != null
-          ? _buildSelectedImageView()
-          : _buildImagePickerView(),
+      child: _hasImageToShow() ? _buildSelectedImageView() : _buildImagePickerView(),
     );
+  }
+
+  // Helper method to check if there's an image to show
+  bool _hasImageToShow() {
+    return _selectedImage != null || widget.existingImageUrl != null;
   }
 
   Widget _buildImagePickerView() {
@@ -157,12 +162,34 @@ class _PictureUploadSectionState extends State<PictureUploadSection> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                _selectedImage!,
-                height: widget.imageHeight,
-                width: widget.imageWidth ?? double.infinity,
-                fit: BoxFit.cover,
-              ),
+              child: _selectedImage != null
+                  ? Image.file(
+                      _selectedImage!,
+                      height: widget.imageHeight,
+                      width: widget.imageWidth ?? double.infinity,
+                      fit: BoxFit.cover,
+                    )
+                  : Image.network(
+                      widget.existingImageUrl!,
+                      height: widget.imageHeight,
+                      width: widget.imageWidth ?? double.infinity,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: widget.imageHeight,
+                          width: widget.imageWidth ?? double.infinity,
+                          child: Center(child: CircularProgressIndicator()),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: widget.imageHeight,
+                          width: widget.imageWidth ?? double.infinity,
+                          child: Center(child: Text('Failed to load image')),
+                        );
+                      },
+                    ),
             ),
             Positioned(
               top: 8,

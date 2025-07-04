@@ -257,7 +257,8 @@ class _ReportLostPetPageState extends State<ReportLostPetPage> {
 class DogDetailsPage extends StatefulWidget {
   final String petName;
   final String? userId;
-  const DogDetailsPage({Key? key, required this.petName, this.userId}) : super(key: key);
+  final Map<String, dynamic>? editData;
+  const DogDetailsPage({Key? key, required this.petName, this.userId, this.editData}) : super(key: key);
 
   @override
   State<DogDetailsPage> createState() => _DogDetailsPageState();
@@ -280,19 +281,67 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
   DateTime? lostDate;
   File? selectedPetImage;  
   LocationData? selectedLocation;
+  String? existingImageUrl; // Add this variable at the top with other variables
   
   final PetReportService _petReportService = PetReportService();
   bool _isSubmitting = false;
+  @override
+  void initState() {
+    super.initState();
+    
+    // If editing, populate fields with existing data
+    if (widget.editData != null) {
+      _populateFieldsFromEditData();
+    }
+  }
 
+  void _populateFieldsFromEditData() {
+    final data = widget.editData!;
+    
+    _ageController.text = data['age'] ?? '';
+    _petTypeController.text = data['pet_type_category'] ?? '';
+    _genderController.text = data['gender'] ?? '';
+    _breedController.text = data['breed'] ?? '';
+    _sterilizedController.text = data['sterilized'] ?? '';
+    _earNotchedController.text = data['ear_notched'] ?? '';
+    _collarController.text = data['collar'] ?? '';
+    _injuredController.text = data['injured'] ?? '';
+    _friendlyController.text = data['friendly'] ?? '';
+    _colorController.text = data['color'] ?? '';
+    _locationController.text = data['location_address'] ?? '';
+    _additionalDetailsController.text = data['additional_details'] ?? '';
+    
+    // Set lost date if available
+    if (data['date'] != null) {
+      try {
+        lostDate = DateTime.parse(data['date']);
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+    }
+    
+    // Set location data if available
+    if (data['latitude'] != null && data['longitude'] != null) {
+      selectedLocation = LocationData(
+        address: data['location_address'] ?? '',
+        latitude: data['latitude'].toDouble(),
+        longitude: data['longitude'].toDouble(),
+      );
+    }
+    if(data['image_url'] != null) {
+      // If editing, we can keep the existing image URL
+      existingImageUrl  = data['image_url']; 
+    } 
+  }
 
     @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${widget.petName} - Dog Details'),
-        backgroundColor: Colors.red,
-        foregroundColor: Colors.white,
-      ),
+    appBar: AppBar(
+      title: Text('${widget.petName} - ${widget.editData != null ? 'Edit' : 'Dog Details'}'),
+      backgroundColor: Colors.red,
+      foregroundColor: Colors.white,
+    ),
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
@@ -329,14 +378,20 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                       const SizedBox(height: 16),
 
                       DatePickerFormField(
-                        label: 'Date Lost',
-                        selectedDate: lostDate,
-                        onDateSelected: (picked) {
-                          setState(() {
-                            lostDate = picked;
-                          });
-                        },
-                      ),
+                      label: 'Date Lost',
+                      selectedDate: lostDate,
+                      onDateSelected: (picked) {
+                        setState(() {
+                          lostDate = picked;
+                        });
+                      },
+                      validator: (DateTime? date) {
+                        if (date == null) {
+                          return 'Please select the date when the pet was lost';
+                        }
+                        return null;
+                      },
+                    ),
 
 
                       const SizedBox(height: 16),
@@ -411,6 +466,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           border: OutlineInputBorder(),
                         ),
                         items: [
+                          'Indie Dog (Indian Street Dog)',
                           'Labrador Retriever',
                           'German Shepherd',
                           'Golden Retriever',
@@ -426,7 +482,6 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           'Cocker Spaniel',
                           'Husky',
                           'Saint Bernard',
-                          'Indie Dog (Indian Street Dog)',
                           'Mixed Breed',
                           'Unknown',
                         ].map((breed) {
@@ -698,9 +753,13 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                       PictureUploadSection(
                         title: 'Pet Photo',
                         buttonText: 'Add Pet Photo',
+                        existingImageUrl: existingImageUrl, // Add this line
                         onImageSelected: (File? image) {
                           setState(() {
                             selectedPetImage = image;
+                            if (image != null) {
+                              existingImageUrl = null; // Clear existing URL when new image is selected
+                            }
                           });
                         },
                       ),
@@ -765,7 +824,7 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
     );
   }
 
-Future<void> _submitReport() async {
+  Future<void> _submitReport() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -787,50 +846,85 @@ Future<void> _submitReport() async {
         if (imageUrl == null) {
           throw Exception('Failed to upload image');
         }
+      } else if (widget.editData != null) {
+        // Keep existing image URL if no new image is selected
+        imageUrl = widget.editData!['image_url'];
       }
 
-      // Submit the report
-      final success = await _petReportService.submitPetReport(
-        petName: widget.petName,
-        petType: 'dog',
-        reportType: 'lost',
-        age: _ageController.text,
-        dateLost: lostDate,
-        petTypeCategory: _petTypeController.text,
-        gender: _genderController.text,
-        breed: _breedController.text,
-        sterilized: _sterilizedController.text,
-        earNotched: _earNotchedController.text,
-        collar: _collarController.text,
-        injured: _injuredController.text,
-        friendly: _friendlyController.text,
-        color: _colorController.text,
-        locationAddress: _locationController.text,
-        latitude: selectedLocation?.latitude,
-        longitude: selectedLocation?.longitude,
-        additionalDetails: _additionalDetailsController.text,
-        imageUrl: imageUrl,
-        userId: widget.userId,
-      );
+      bool success;
+      
+      // Check if we're editing or creating new report
+      if (widget.editData != null) {
+        // Update existing report
+        success = await _petReportService.updatePetReport(
+          reportId: widget.editData!['id'],
+          petName: widget.petName,
+          petType: 'dog',
+          reportType: 'lost',
+          age: _ageController.text,
+          dateLost: lostDate,
+          petTypeCategory: _petTypeController.text,
+          gender: _genderController.text,
+          breed: _breedController.text,
+          sterilized: _sterilizedController.text,
+          earNotched: _earNotchedController.text,
+          collar: _collarController.text,
+          injured: _injuredController.text,
+          friendly: _friendlyController.text,
+          color: _colorController.text,
+          locationAddress: _locationController.text,
+          latitude: selectedLocation?.latitude,
+          longitude: selectedLocation?.longitude,
+          additionalDetails: _additionalDetailsController.text,
+          imageUrl: imageUrl,
+          userId: widget.userId,
+        );
+      } else {
+        // Submit new report (existing logic)
+        success = await _petReportService.submitPetReport(
+          petName: widget.petName,
+          petType: 'dog',
+          reportType: 'lost',
+          age: _ageController.text,
+          dateLost: lostDate,
+          petTypeCategory: _petTypeController.text,
+          gender: _genderController.text,
+          breed: _breedController.text,
+          sterilized: _sterilizedController.text,
+          earNotched: _earNotchedController.text,
+          collar: _collarController.text,
+          injured: _injuredController.text,
+          friendly: _friendlyController.text,
+          color: _colorController.text,
+          locationAddress: _locationController.text,
+          latitude: selectedLocation?.latitude,
+          longitude: selectedLocation?.longitude,
+          additionalDetails: _additionalDetailsController.text,
+          imageUrl: imageUrl,
+          userId: widget.userId,
+        );
+      }
 
       if (success) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${widget.petName} report submitted successfully!'),
+              content: Text(widget.editData != null 
+                  ? '${widget.petName} report updated successfully!' 
+                  : '${widget.petName} report submitted successfully!'),
               backgroundColor: Colors.green,
             ),
           );
           Navigator.popUntil(context, (route) => route.isFirst);
         }
       } else {
-        throw Exception('Failed to submit report');
+        throw Exception(widget.editData != null ? 'Failed to update report' : 'Failed to submit report');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error submitting report: ${e.toString()}'),
+            content: Text('Error ${widget.editData != null ? 'updating' : 'submitting'} report: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -867,8 +961,9 @@ Future<void> _submitReport() async {
 class CatDetailsPage extends StatefulWidget {
   final String petName;
   final String? userId;
+  final Map<String, dynamic>? editData;
   
-  const CatDetailsPage({Key? key, required this.petName, this.userId}) : super(key: key);
+  const CatDetailsPage({Key? key, required this.petName, this.userId, this.editData}) : super(key: key);
   
   @override
   State<CatDetailsPage> createState() => _CatDetailsPageState();
@@ -893,11 +988,61 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
   LocationData? selectedLocation;
   final PetReportService _petReportService = PetReportService();
   bool _isSubmitting = false;
+  String? existingImageUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    // If editing, populate fields with existing data
+    if (widget.editData != null) {
+      _populateFieldsFromEditData();
+    }
+  }
+    void _populateFieldsFromEditData() {
+    final data = widget.editData!;
+    
+    _ageController.text = data['age'] ?? '';
+    _petTypeController.text = data['pet_type_category'] ?? '';
+    _genderController.text = data['gender'] ?? '';
+    _breedController.text = data['breed'] ?? '';
+    _sterilizedController.text = data['sterilized'] ?? '';
+    _earNotchedController.text = data['ear_notched'] ?? '';
+    _collarController.text = data['collar'] ?? '';
+    _injuredController.text = data['injured'] ?? '';
+    _friendlyController.text = data['friendly'] ?? '';
+    _colorController.text = data['color'] ?? '';
+    _locationController.text = data['location_address'] ?? '';
+    _additionalDetailsController.text = data['additional_details'] ?? '';
+    
+    // Set lost date if available
+    if (data['date'] != null) {
+      try {
+        lostDate = DateTime.parse(data['date']);
+      } catch (e) {
+        print('Error parsing date: $e');
+      }
+    }
+    
+    // Set location data if available
+    if (data['latitude'] != null && data['longitude'] != null) {
+      selectedLocation = LocationData(
+        address: data['location_address'] ?? '',
+        latitude: data['latitude'].toDouble(),
+        longitude: data['longitude'].toDouble(),
+      );
+    }
+    if(data['image_url'] != null) {
+      // If editing, we can keep the existing image URL
+      existingImageUrl  = data['image_url']; 
+    } 
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.petName} - Cat Details'),
+        title: Text('${widget.petName} - ${widget.editData != null ? 'Edit' : 'Cat Details'}'),
         backgroundColor: Colors.red,
         foregroundColor: Colors.white,
       ),
@@ -935,15 +1080,21 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                         },
                       ),
                       const SizedBox(height: 16),
-                                            DatePickerFormField(
-                        label: 'Date Lost',
-                        selectedDate: lostDate,
-                        onDateSelected: (picked) {
-                          setState(() {
-                            lostDate = picked;
-                          });
-                        },
-                      ),
+                      DatePickerFormField(
+                      label: 'Date Lost',
+                      selectedDate: lostDate,
+                      onDateSelected: (picked) {
+                        setState(() {
+                          lostDate = picked;
+                        });
+                      },
+                      validator: (DateTime? date) {
+                        if (date == null) {
+                          return 'Please select the date when the pet was lost';
+                        }
+                        return null;
+                      },
+                    ),
 
 
                       const SizedBox(height: 16),
@@ -1019,6 +1170,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                         ),
                         
                         items: [
+                          'Indian Billi (Indian Street Cat)',
                             'Persian Cat',
                             'Siamese Cat',
                             'Maine Coon',
@@ -1029,7 +1181,6 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                             'Scottish Fold',
                             'Russian Blue',
                             'Sphynx Cat',
-                            'Indian Billi (Indian Street Cat)',
                             'Unknown'
                         ].map((breed) {
                           return DropdownMenuItem<String>(
@@ -1299,9 +1450,13 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                       PictureUploadSection(
                         title: 'Pet Photo',
                         buttonText: 'Add Pet Photo',
+                        existingImageUrl: existingImageUrl, // Add this line
                         onImageSelected: (File? image) {
                           setState(() {
                             selectedPetImage = image;
+                            if (image != null) {
+                              existingImageUrl = null; // Clear existing URL when new image is selected
+                            }
                           });
                         },
                       ),
@@ -1366,31 +1521,39 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
   }
   
 Future<void> _submitReport() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  setState(() {
+    _isSubmitting = true;
+  });
+
+  try {
+    String? imageUrl;
+    
+    // Upload image if selected
+    if (selectedPetImage != null) {
+      imageUrl = await _petReportService.uploadImage(
+        selectedPetImage!,
+        '${widget.petName}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      
+      if (imageUrl == null) {
+        throw Exception('Failed to upload image');
+      }
+    } else if (widget.editData != null) {
+      // Keep existing image URL if no new image is selected
+      imageUrl = widget.editData!['image_url'];
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    try {
-      String? imageUrl;
-      
-      // Upload image if selected
-      if (selectedPetImage != null) {
-        imageUrl = await _petReportService.uploadImage(
-          selectedPetImage!,
-          '${widget.petName}_${DateTime.now().millisecondsSinceEpoch}',
-        );
-        
-        if (imageUrl == null) {
-          throw Exception('Failed to upload image');
-        }
-      }
-
-      // Submit the report
-      final success = await _petReportService.submitPetReport(
+    bool success;
+    
+    // Check if we're editing or creating new report
+    if (widget.editData != null) {
+      // Update existing report
+      success = await _petReportService.updatePetReport(
+        reportId: widget.editData!['id'],
         petName: widget.petName,
         petType: 'cat',
         reportType: 'lost',
@@ -1412,37 +1575,64 @@ Future<void> _submitReport() async {
         imageUrl: imageUrl,
         userId: widget.userId,
       );
+    } else {
+      // Submit new report (existing logic)
+      success = await _petReportService.submitPetReport(
+        petName: widget.petName,
+        petType: 'cat',
+        reportType: 'lost',
+        age: _ageController.text,
+        dateLost: lostDate,
+        petTypeCategory: _petTypeController.text,
+        gender: _genderController.text,
+        breed: _breedController.text,
+        sterilized: _sterilizedController.text,
+        earNotched: _earNotchedController.text,
+        collar: _collarController.text,
+        injured: _injuredController.text,
+        friendly: _friendlyController.text,
+        color: _colorController.text,
+        locationAddress: _locationController.text,
+        latitude: selectedLocation?.latitude,
+        longitude: selectedLocation?.longitude,
+        additionalDetails: _additionalDetailsController.text,
+        imageUrl: imageUrl,
+        userId: widget.userId,
+      );
+    }
 
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${widget.petName} report submitted successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
-      } else {
-        throw Exception('Failed to submit report');
-      }
-    } catch (e) {
+    if (success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error submitting report: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(widget.editData != null 
+                ? '${widget.petName} report updated successfully!' 
+                : '${widget.petName} report submitted successfully!'),
+            backgroundColor: Colors.green,
           ),
         );
+        Navigator.popUntil(context, (route) => route.isFirst);
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+    } else {
+      throw Exception(widget.editData != null ? 'Failed to update report' : 'Failed to submit report');
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error ${widget.editData != null ? 'updating' : 'submitting'} report: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
+}
 
   @override
   void dispose() {

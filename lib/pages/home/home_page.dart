@@ -383,7 +383,7 @@ class _HomePageState extends State<HomePage> {
                       },
                     ),
                     _buildActionCard(
-                      title: 'Put up for adoption',
+                      title: 'Placing for adoption',
                       subtitle: 'Help a pet find a new home',
                       icon: Icons.home,
                       color: const Color.fromARGB(255, 40, 16, 94),

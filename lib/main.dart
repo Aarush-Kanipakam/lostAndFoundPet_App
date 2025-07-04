@@ -13,6 +13,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/pets/pet_matches_page.dart';
 import 'pages/pets/put_up_for_adoption_page.dart';
 import 'pages/pets/pet_adoption_matches_page.dart';
+import 'pages/pets/report_lost_pet_page.dart' as lost_pet;
+import 'pages/pets/report_found_pet_page.dart' as found_pet;
+import 'pages/pets/put_up_for_adoption_page.dart' as pet;
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -74,6 +77,104 @@ class MyApp extends StatelessWidget {
         '/matches': (context) => const PetMatchesPage(),
         '/putUpForAdoption': (context) => const PutUpForAdoptionPage(),
         '/adoptionMatches': (context) => const PetAdoptionMatchesPage(),
+        // Add this route to your MaterialApp routes
+        '/edit-report-lost-dog': (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final reportData = arguments?['reportData'] as Map<String, dynamic>?;
+          final userId = arguments?['userId'] as String?;
+          
+          if (reportData != null) {
+            return lost_pet.DogDetailsPage(
+              petName: reportData['pet_name'] ?? 'Unknown Pet',
+              userId: userId,
+              editData: reportData,
+            );
+          }
+          
+          // Fallback to regular report page if no data
+          return const ReportLostPetPage();
+        },
+        '/edit-report-found-dog': (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final reportData = arguments?['reportData'] as Map<String, dynamic>?;
+          final userId = arguments?['userId'] as String?;
+          
+          if (reportData != null) {
+            return found_pet.DogDetailsPage(
+              petName: reportData['pet_name'] ?? 'Unknown Pet',
+              userId: userId,
+              editData: reportData,
+            );
+          }
+          
+          // Fallback to regular report page if no data
+          return const ReportFoundPetPage();
+        },
+        '/edit-report-lost-cat': (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final reportData = arguments?['reportData'] as Map<String, dynamic>?;
+          final userId = arguments?['userId'] as String?;
+          
+          if (reportData != null) {
+            return lost_pet.CatDetailsPage(
+              petName: reportData['pet_name'] ?? 'Unknown Pet',
+              userId: userId,
+              editData: reportData,
+            );
+          }
+          
+          // Fallback to regular report page if no data
+          return const ReportLostPetPage();
+        },
+        '/edit-report-found-cat': (context) {
+          final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final reportData = arguments?['reportData'] as Map<String, dynamic>?;
+          final userId = arguments?['userId'] as String?;
+          
+          if (reportData != null) {
+            return found_pet.CatDetailsPage(
+              petName: reportData['pet_name'] ?? 'Unknown Pet',
+              userId: userId,
+              editData: reportData,
+            );
+          }
+          
+          // Fallback to regular report page if no data
+          return const ReportFoundPetPage();
+        },
+        '/edit-report-adoption-dog': (context) {
+        final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final reportData = arguments?['reportData'] as Map<String, dynamic>?;
+        final userId = arguments?['userId'] as String?;
+
+        if (reportData != null) {
+          return pet.DogDetailsPage(
+            petName: reportData['pet_name'] ?? 'Unknown Pet',
+            userId: userId,
+            editData: reportData,
+          );
+        }
+
+        // Fallback to new adoption form if no data is provided
+        return const PutUpForAdoptionPage();
+      },
+      '/edit-report-adoption-cat': (context) {
+        final arguments = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+        final reportData = arguments?['reportData'] as Map<String, dynamic>?;
+        final userId = arguments?['userId'] as String?;
+
+        if (reportData != null) {
+          return pet.CatDetailsPage(
+            petName: reportData['pet_name'] ?? 'Unknown Pet',
+            userId: userId,
+            editData: reportData,
+          );
+        }
+
+        // Fallback to new adoption form if no data is provided
+        return const PutUpForAdoptionPage();
+      },
+
       },
       debugShowCheckedModeBanner: false,
     );

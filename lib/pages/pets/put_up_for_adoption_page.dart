@@ -428,77 +428,120 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: _userPets.length,
-      itemBuilder: (context, index) {
-        final pet = _userPets[index];
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
+  padding: const EdgeInsets.all(20),
+  itemCount: _userPets.length,
+  itemBuilder: (context, index) {
+    final pet = _userPets[index];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+        leading: Container(
+          width: 50,
+          height: 50,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            color: pet['pet_type'] == 'dog' ? Colors.blue[100] : Colors.orange[100],
+            borderRadius: BorderRadius.circular(25),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                color: pet['pet_type'] == 'dog' ? Colors.blue[100] : Colors.orange[100],
-                borderRadius: BorderRadius.circular(25),
-              ),
-              child: Icon(
-                Icons.pets,
-                color: pet['pet_type'] == 'dog' ? Colors.blue[600] : Colors.orange[600],
-                size: 24,
-              ),
-            ),
-            title: Text(
-              pet['pet_name'] ?? 'Unknown',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text(
-                  '${pet['pet_type']?.toString().toUpperCase() ?? 'UNKNOWN'} • ${pet['breed'] ?? 'Mixed breed'}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Age: ${pet['age'] ?? 'Unknown'} • Gender: ${pet['gender'] ?? 'Unknown'}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-            trailing: IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 24),
-              onPressed: () => _deletePet(
-                pet['id'].toString(), 
-                pet['pet_name'] ?? 'this pet'
-              ),
-            ),
+          child: Icon(
+            Icons.pets,
+            color: pet['pet_type'] == 'dog' ? Colors.blue[600] : Colors.orange[600],
+            size: 24,
           ),
+        ),
+        title: Text(
+          pet['pet_name'] ?? 'Unknown',
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              '${pet['pet_type']?.toString().toUpperCase() ?? 'UNKNOWN'} • ${pet['breed'] ?? 'Mixed breed'}',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'Age: ${pet['age'] ?? 'Unknown'} • Gender: ${pet['gender'] ?? 'Unknown'}',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+  ElevatedButton(
+    onPressed: () {
+      if (pet['pet_type'] == 'dog') {
+        Navigator.pushNamed(
+          context,
+          '/edit-report-adoption-dog',
+          arguments: {
+            'reportData': pet,
+            'userId': _userId,
+          },
         );
-      },
+      }
+      else if (pet['pet_type'] == 'cat') {
+        Navigator.pushNamed(
+          context,
+          '/edit-report-adoption-cat',
+          arguments: {
+            'reportData': pet,
+            'userId': _userId,
+          },
+        );
+      }
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.orange[400],
+      foregroundColor: Colors.white,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    ),
+    child: const Text(
+      'Edit',
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+      ),
+    ),
+  ),
+  IconButton(
+    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 24),
+    onPressed: () => _deletePet(
+      pet['id'].toString(),
+      pet['pet_name'] ?? 'this pet',
+    ),
+  ),
+],
+        ),
+      ),
     );
+  },
+);
+
   }
 
   @override
@@ -511,7 +554,8 @@ class _PutUpForAdoptionPageState extends State<PutUpForAdoptionPage> {
 class DogDetailsPage extends StatefulWidget {
   final String petName;
   final String? userId;
-  const DogDetailsPage({Key? key, required this.petName, this.userId}) : super(key: key);
+  final Map<String, dynamic>? editData;
+  const DogDetailsPage({Key? key, required this.petName, this.userId, this.editData}) : super(key: key);
 
   @override
   State<DogDetailsPage> createState() => _DogDetailsPageState();
@@ -531,16 +575,56 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
   // DateTime? lostDate;
   File? selectedPetImage;  
   LocationData? selectedLocation;
+  String? existingImageUrl;
   
   final PetReportService _petReportService = PetReportService();
   bool _isSubmitting = false;
+  @override
+  void initState() {
+    super.initState();
+    
+    // If editing, populate fields with existing data
+    if (widget.editData != null) {
+      _populateFieldsFromEditData();
+    }
+  }
+
+  void _populateFieldsFromEditData() {
+    final data = widget.editData!;
+    
+    _ageController.text = data['age'] ?? '';
+   
+    _genderController.text = data['gender'] ?? '';
+    _breedController.text = data['breed'] ?? '';
+    _sterilizedController.text = data['sterilized'] ?? '';
+    _vaccinatedController.text = data['vaccinated'] ?? '';
+    
+    _locationController.text = data['location_address'] ?? '';
+    _additionalDetailsController.text = data['additional_details'] ?? '';
+    
+    // Set lost date if available
+
+    
+    // Set location data if available
+    if (data['latitude'] != null && data['longitude'] != null) {
+      selectedLocation = LocationData(
+        address: data['location_address'] ?? '',
+        latitude: data['latitude'].toDouble(),
+        longitude: data['longitude'].toDouble(),
+      );
+    }
+    if(data['image_url'] != null) {
+      // If editing, we can keep the existing image URL
+      existingImageUrl  = data['image_url']; 
+    } 
+  }
 
 
     @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.petName} - Dog Details'),
+        title: Text('${widget.petName} - ${widget.editData != null ? 'Edit' : 'Dog Details'}'),
         backgroundColor: Colors.red[400],
         foregroundColor: Colors.white,
       ),
@@ -621,6 +705,8 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           border: OutlineInputBorder(),
                         ),
                         items: [
+                          'Indie Dog (Indian Street Dog)',
+                          'Mixed Breed',
                           'Labrador Retriever',
                           'German Shepherd',
                           'Golden Retriever',
@@ -636,8 +722,6 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                           'Cocker Spaniel',
                           'Husky',
                           'Saint Bernard',
-                          'Indie Dog (Indian Street Dog)',
-                          'Mixed Breed',
                           'Unknown',
                         ].map((breed) {
                           return DropdownMenuItem<String>(
@@ -772,9 +856,13 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
                       PictureUploadSection(
                         title: 'Pet Photo',
                         buttonText: 'Add Pet Photo',
+                        existingImageUrl: existingImageUrl, // Add this line
                         onImageSelected: (File? image) {
                           setState(() {
                             selectedPetImage = image;
+                            if (image != null) {
+                              existingImageUrl = null; // Clear existing URL when new image is selected
+                            }
                           });
                         },
                       ),
@@ -840,42 +928,45 @@ class _DogDetailsPageState extends State<DogDetailsPage> {
   }
 
 Future<void> _submitReport() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  setState(() {
+    _isSubmitting = true;
+  });
+
+  try {
+    String? imageUrl;
+
+    // Upload new image if selected
+    if (selectedPetImage != null) {
+      imageUrl = await _petReportService.uploadImage(
+        selectedPetImage!,
+        '${widget.petName}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (imageUrl == null) {
+        throw Exception('Failed to upload image');
+      }
+    } else if (widget.editData != null) {
+      // Keep existing image URL if no new image is selected
+      imageUrl = widget.editData!['image_url'];
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    bool success;
 
-    try {
-      String? imageUrl;
-      
-      // Upload image if selected
-      if (selectedPetImage != null) {
-        imageUrl = await _petReportService.uploadImage(
-          selectedPetImage!,
-          '${widget.petName}_${DateTime.now().millisecondsSinceEpoch}',
-        );
-        
-        if (imageUrl == null) {
-          throw Exception('Failed to upload image');
-        }
-      }
-
-      // Submit the report
-      final success = await _petReportService.submitPetForAdoption(
+    if (widget.editData != null) {
+      // Editing existing adoption report
+      success = await _petReportService.updatePetForAdoption(
+        reportId: widget.editData!['id'],
         petName: widget.petName,
         petType: 'dog',
-        
         age: _ageController.text,
-  
-        
         gender: _genderController.text,
         breed: _breedController.text,
         sterilized: _sterilizedController.text,
         vaccinated: _vaccinatedController.text,
-       
         locationAddress: _locationController.text,
         latitude: selectedLocation?.latitude,
         longitude: selectedLocation?.longitude,
@@ -883,37 +974,57 @@ Future<void> _submitReport() async {
         imageUrl: imageUrl,
         userId: widget.userId,
       );
+    } else {
+      // Submitting new adoption report
+      success = await _petReportService.submitPetForAdoption(
+        petName: widget.petName,
+        petType: 'dog',
+        age: _ageController.text,
+        gender: _genderController.text,
+        breed: _breedController.text,
+        sterilized: _sterilizedController.text,
+        vaccinated: _vaccinatedController.text,
+        locationAddress: _locationController.text,
+        latitude: selectedLocation?.latitude,
+        longitude: selectedLocation?.longitude,
+        additionalDetails: _additionalDetailsController.text,
+        imageUrl: imageUrl,
+        userId: widget.userId,
+      );
+    }
 
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${widget.petName} report submitted successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
-      } else {
-        throw Exception('Failed to submit report');
-      }
-    } catch (e) {
+    if (success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error submitting report: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(widget.editData != null
+                ? '${widget.petName} report updated successfully!'
+                : '${widget.petName} report submitted successfully!'),
+            backgroundColor: Colors.green,
           ),
         );
+        Navigator.popUntil(context, (route) => route.isFirst);
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+    } else {
+      throw Exception(widget.editData != null ? 'Failed to update report i23' : 'Failed to submit report');
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error ${widget.editData != null ? 'updating' : 'submitting'} report: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
+}
 
   @override
   void dispose() {
@@ -935,8 +1046,8 @@ Future<void> _submitReport() async {
 class CatDetailsPage extends StatefulWidget {
   final String petName;
   final String? userId;
-  
-  const CatDetailsPage({Key? key, required this.petName, this.userId}) : super(key: key);
+  final Map<String, dynamic>? editData;
+  const CatDetailsPage({Key? key, required this.petName, this.userId, this.editData}) : super(key: key);
   
   @override
   State<CatDetailsPage> createState() => _CatDetailsPageState();
@@ -956,8 +1067,48 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
   
   File? selectedPetImage;
   LocationData? selectedLocation;
+  String? existingImageUrl;
   final PetReportService _petReportService = PetReportService();
   bool _isSubmitting = false;
+  @override
+  void initState() {
+    super.initState();
+    
+    // If editing, populate fields with existing data
+    if (widget.editData != null) {
+      _populateFieldsFromEditData();
+    }
+  }
+
+  void _populateFieldsFromEditData() {
+    final data = widget.editData!;
+    
+    _ageController.text = data['age'] ?? '';
+   
+    _genderController.text = data['gender'] ?? '';
+    _breedController.text = data['breed'] ?? '';
+    _sterilizedController.text = data['sterilized'] ?? '';
+    _vaccinatedController.text = data['vaccinated'] ?? '';
+   
+    _locationController.text = data['location_address'] ?? '';
+    _additionalDetailsController.text = data['additional_details'] ?? '';
+    
+    // Set lost date if available
+
+    
+    // Set location data if available
+    if (data['latitude'] != null && data['longitude'] != null) {
+      selectedLocation = LocationData(
+        address: data['location_address'] ?? '',
+        latitude: data['latitude'].toDouble(),
+        longitude: data['longitude'].toDouble(),
+      );
+    }
+    if(data['image_url'] != null) {
+      // If editing, we can keep the existing image URL
+      existingImageUrl  = data['image_url']; 
+    } 
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1042,6 +1193,7 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                         ),
                         
                         items: [
+                            'Indian Billi (Indian Street Cat)',
                             'Persian Cat',
                             'Siamese Cat',
                             'Maine Coon',
@@ -1052,7 +1204,6 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                             'Scottish Fold',
                             'Russian Blue',
                             'Sphynx Cat',
-                            'Indian Billi (Indian Street Cat)',
                             'Unknown'
                         ].map((breed) {
                           return DropdownMenuItem<String>(
@@ -1150,8 +1301,8 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                           
                           if (location != null) {
                             print('Address: ${location.address}');
-                            print('Latitude: ${location.latitude}');
-                            print('Longitude: ${location.longitude}');
+                            // print('Latitude: ${location.latitude}');
+                            // print('Longitude: ${location.longitude}');
                           }
                         },
                         validator: (value) {
@@ -1187,11 +1338,16 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                       PictureUploadSection(
                         title: 'Pet Photo',
                         buttonText: 'Add Pet Photo',
+                        existingImageUrl: existingImageUrl, // Add this line
                         onImageSelected: (File? image) {
                           setState(() {
                             selectedPetImage = image;
+                            if (image != null) {
+                              existingImageUrl = null; // Clear existing URL when new image is selected
+                            }
                           });
                         },
+ 
                       ),
                       const SizedBox(height: 16),
 
@@ -1204,12 +1360,12 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
                           border: OutlineInputBorder(),
                         ),
                         maxLines: 4,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please provide additional details';
-                          }
-                          return null;
-                        },
+                        // validator: (value) {
+                        //   if (value == null || value.isEmpty) {
+                        //     return 'Please provide additional details';
+                        //   }
+                        //   return null;
+                        // },
                       ),
                       const SizedBox(height: 30),
 
@@ -1254,42 +1410,45 @@ class _CatDetailsPageState extends State<CatDetailsPage> {
   }
   
 Future<void> _submitReport() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
+  if (!_formKey.currentState!.validate()) {
+    return;
+  }
+
+  setState(() {
+    _isSubmitting = true;
+  });
+
+  try {
+    String? imageUrl;
+
+    // Upload new image if selected
+    if (selectedPetImage != null) {
+      imageUrl = await _petReportService.uploadImage(
+        selectedPetImage!,
+        '${widget.petName}_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (imageUrl == null) {
+        throw Exception('Failed to upload image');
+      }
+    } else if (widget.editData != null) {
+      // Keep existing image URL if no new image is selected
+      imageUrl = widget.editData!['image_url'];
     }
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    bool success;
 
-    try {
-      String? imageUrl;
-      
-      // Upload image if selected
-      if (selectedPetImage != null) {
-        imageUrl = await _petReportService.uploadImage(
-          selectedPetImage!,
-          '${widget.petName}_${DateTime.now().millisecondsSinceEpoch}',
-        );
-        
-        if (imageUrl == null) {
-          throw Exception('Failed to upload image');
-        }
-      }
-
-      // Submit the report
-      final success = await _petReportService.submitPetForAdoption(
+    if (widget.editData != null) {
+      // Editing existing adoption report
+      success = await _petReportService.updatePetForAdoption(
+        reportId: widget.editData!['id'],
         petName: widget.petName,
         petType: 'cat',
-        
         age: _ageController.text,
-        
-       
         gender: _genderController.text,
         breed: _breedController.text,
         sterilized: _sterilizedController.text,
         vaccinated: _vaccinatedController.text,
-        
         locationAddress: _locationController.text,
         latitude: selectedLocation?.latitude,
         longitude: selectedLocation?.longitude,
@@ -1297,37 +1456,57 @@ Future<void> _submitReport() async {
         imageUrl: imageUrl,
         userId: widget.userId,
       );
+    } else {
+      // Submitting new adoption report
+      success = await _petReportService.submitPetForAdoption(
+        petName: widget.petName,
+        petType: 'cat',
+        age: _ageController.text,
+        gender: _genderController.text,
+        breed: _breedController.text,
+        sterilized: _sterilizedController.text,
+        vaccinated: _vaccinatedController.text,
+        locationAddress: _locationController.text,
+        latitude: selectedLocation?.latitude,
+        longitude: selectedLocation?.longitude,
+        additionalDetails: _additionalDetailsController.text,
+        imageUrl: imageUrl,
+        userId: widget.userId,
+      );
+    }
 
-      if (success) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('${widget.petName} report submitted successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
-      } else {
-        throw Exception('Failed to submit report');
-      }
-    } catch (e) {
+    if (success) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error submitting report: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Text(widget.editData != null
+                ? '${widget.petName} report updated successfully!'
+                : '${widget.petName} report submitted successfully!'),
+            backgroundColor: Colors.green,
           ),
         );
+        Navigator.popUntil(context, (route) => route.isFirst);
       }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-      }
+    } else {
+      throw Exception(widget.editData != null ? 'Failed to update report i23' : 'Failed to submit report');
+    }
+  } catch (e) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error ${widget.editData != null ? 'updating' : 'submitting'} report: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  } finally {
+    if (mounted) {
+      setState(() {
+        _isSubmitting = false;
+      });
     }
   }
+}
 
   @override
   void dispose() {

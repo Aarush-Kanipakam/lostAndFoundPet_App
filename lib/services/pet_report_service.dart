@@ -25,6 +25,109 @@ class PetReportService {
       return null;
     }
   }
+// Add this method to your PetReportService class
+Future<bool> updatePetReport({
+  required String? reportId,
+  required String petName,
+  required String petType,
+  required String reportType,
+  required String age,
+  DateTime? dateLost,
+  required String petTypeCategory,
+  required String gender,
+  required String breed,
+  required String sterilized,
+  required String earNotched,
+  required String collar,
+  required String injured,
+  required String friendly,
+  required String color,
+  required String locationAddress,
+  double? latitude,
+  double? longitude,
+  required String additionalDetails,
+  String? imageUrl,
+  String? userId,
+}) async {
+  try {
+    final response = await Supabase.instance.client
+        .from('adoption_pets')
+        .update({
+          'pet_name': petName,
+          'pet_type': petType,
+          'report_type': reportType,
+          'age': age,
+          'date': dateLost?.toIso8601String(),
+          'pet_type_category': petTypeCategory,
+          'gender': gender,
+          'breed': breed,
+          'sterilized': sterilized,
+          'ear_notched': earNotched,
+          'collar': collar,
+          'injured': injured,
+          'friendly': friendly,
+          'color': color,
+          'location_address': locationAddress,
+          'latitude': latitude,
+          'longitude': longitude,
+          'additional_details': additionalDetails,
+          'image_url': imageUrl,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', reportId!);
+
+    return true;
+  } catch (e) {
+    print('Error updating pet report: $e');
+    return false;
+  }
+}
+
+Future<bool> updatePetForAdoption({
+  required String? reportId,
+  required String petName,
+  required String petType,
+  required String age,
+  required String gender,
+  required String breed,
+  required String sterilized,
+  required String vaccinated,
+  required String locationAddress,
+  double? latitude,
+  double? longitude,
+  required String additionalDetails,
+  String? imageUrl,
+  String? userId,
+}) async {
+  try {
+    final response = await Supabase.instance.client
+        .from('adoption_pets') // Use your actual table name
+        .update({
+          'pet_name': petName,
+          'pet_type': petType,
+          'age': age,
+          'gender': gender,
+          'breed': breed,
+          'sterilized': sterilized,
+          'vaccinated': vaccinated,
+          'location_address': locationAddress,
+          'latitude': latitude,
+          'longitude': longitude,
+          'additional_details': additionalDetails,
+          'image_url': imageUrl,
+         
+        })
+        .eq('id', reportId!);
+        
+
+
+
+    return true;
+  } catch (e) {
+    print('Error updating pet adoption report: $e');
+    return false;
+  }
+}
 
   Future<bool> submitPetReport({
     required String? userId,

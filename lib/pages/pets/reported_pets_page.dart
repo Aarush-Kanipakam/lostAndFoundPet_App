@@ -54,34 +54,35 @@ class _ReportedPetsPageState extends State<ReportedPetsPage> {
     }
   }
 
-  Widget _buildPetReportCard(Map<String, dynamic> report) {
-    final reportType = report['report_type'] ?? 'Unknown';
-    final petType = report['pet_type'] ?? 'Unknown';
-    final String petName = report['pet_name'] ?? 'Unnamed Pet';
-    // Set colors based on report type
-    Color cardColor = reportType.toLowerCase() == 'lost' 
-        ? Colors.red[50]! 
-        : Colors.blue[50]!;
-    Color iconColor = reportType.toLowerCase() == 'lost' 
-        ? Colors.red[400]! 
-        : Colors.blue[400]!;
-    IconData icon = reportType.toLowerCase() == 'lost' 
-        ? Icons.pets_outlined 
-        : Icons.favorite_outlined;
+ Widget _buildPetReportCard(Map<String, dynamic> report) {
+  final reportType = report['report_type'] ?? 'Unknown';
+  final petType = report['pet_type'] ?? 'Unknown';
+  final String petName = report['pet_name'] ?? 'Unnamed Pet';
+  
+  // Set colors based on report type
+  Color cardColor = reportType.toLowerCase() == 'lost' 
+      ? Colors.red[50]! 
+      : Colors.blue[50]!;
+  Color iconColor = reportType.toLowerCase() == 'lost' 
+      ? Colors.red[400]! 
+      : Colors.blue[400]!;
+  IconData icon = reportType.toLowerCase() == 'lost' 
+      ? Icons.pets_outlined 
+      : Icons.favorite_outlined;
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: cardColor,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: iconColor, size: 30),
-                const SizedBox(width: 12),
-                Expanded(
+  return Card(
+    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    color: cardColor,
+    child: Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: iconColor, size: 30),
+              const SizedBox(width: 12),
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -96,100 +97,198 @@ class _ReportedPetsPageState extends State<ReportedPetsPage> {
                     const SizedBox(height: 4),
                   ],
                 ),
+              ),
+              // Edit Button next to text (only for lost dogs)
+              if (reportType.toLowerCase() == 'lost' && petType.toLowerCase() == 'dog')
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/edit-report-lost-dog',
+                      arguments: {
+                        'reportData': report,
+                        'userId': _userId,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange[400],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: const Text(
+                    'Edit',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
+                if (reportType.toLowerCase() == 'found' && petType.toLowerCase() == 'dog')
+                  ElevatedButton(
                     onPressed: () {
-                      
-                        Navigator.pushNamed(
-                          context, 
-                          '/matches',
-                          arguments: {
-                            'userReportId': _userId, 
-                            'reportType': reportType, 
-                            'petType': petType,
-                            'reportId': report['id'] // Add this line to pass the specific report ID
-                          },
-                        );
-                      
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Checking matches for ${reportType.toLowerCase()} $petType...'),
-                        ),
+                      Navigator.pushNamed(
+                        context,
+                        '/edit-report-found-dog',
+                        arguments: {
+                          'reportData': report,
+                          'userId': _userId,
+                        },
                       );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: iconColor,
+                      backgroundColor: Colors.orange[400],
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                     child: const Text(
-                      'Check Matches',
+                      'Edit',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 8),
-                // Fixed resolve button section
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        // Show loading indicator
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Deleting report...')),
-                        );
 
-                        await Supabase.instance.client
-                            .from('pet_reports')
-                            .delete()
-                            .eq('id', report['id']);
-
-                        // Check if deletion was successful and refresh the list
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Report deleted successfully.')),
-                        );
-                        
-                        // Refresh the pet reports list after successful deletion
-                        _fetchPetReports();
-                        
-                      } catch (error) {
-                        ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Failed to delete report: $error')),
-                        );
-                      }
+                if (reportType.toLowerCase() == 'lost' && petType.toLowerCase() == 'cat')
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/edit-report-lost-cat',
+                        arguments: {
+                          'reportData': report,
+                          'userId': _userId,
+                        },
+                      );
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[400],
+                      backgroundColor: Colors.orange[400],
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                     child: const Text(
-                      'Resolve Issue',
+                      'Edit',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
+                  if (reportType.toLowerCase() == 'found' && petType.toLowerCase() == 'cat')
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamed(
+                        context,
+                        '/edit-report-found-cat',
+                        arguments: {
+                          'reportData': report,
+                          'userId': _userId,
+                        },
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange[400],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    ),
+                    child: const Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Check Matches and Resolve Issue buttons in a row
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(
+                      context, 
+                      '/matches',
+                      arguments: {
+                        'userReportId': _userId, 
+                        'reportType': reportType, 
+                        'petType': petType,
+                        'reportId': report['id']
+                      },
+                    );
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Checking matches for ${reportType.toLowerCase()} $petType...'),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: iconColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text(
+                    'Check Matches',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-                            ],
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () async {
+                    try {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Deleting report...')),
+                      );
+
+                      await Supabase.instance.client
+                          .from('pet_reports')
+                          .delete()
+                          .eq('id', report['id']);
+
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Report deleted successfully.')),
+                      );
+                      
+                      _fetchPetReports();
+                      
+                    } catch (error) {
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to delete report: $error')),
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[400],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text(
+                    'Resolve Issue',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     ),
-    );
-  }
+  );
+}
 
 
   @override
